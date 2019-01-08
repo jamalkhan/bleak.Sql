@@ -34,7 +34,7 @@ namespace bleak.Sql.Minifier.Tests
         }
 
         [TestMethod]
-        public void RemoveDoubleSpaceFromComplicatedSelect()
+        public void Remove_Double_Space_From_Complicated_Select()
         {
             var sql = "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nSELECT\r\n\tId\r\n,\tFirstName\r\n,\tLastName\r\n,\tHireDate\r\n,\tFireDate\r\nFROM Employee";
             var minifier = new SqlMinifier();
@@ -43,12 +43,48 @@ namespace bleak.Sql.Minifier.Tests
         }
 
         [TestMethod]
-        public void RemoveTabFromSimpleSelect()
+        public void Complicated_Select_Does_Not_End_In_Space()
+        {
+            var sql = "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nSELECT\r\n\tId\r\n,\tFirstName\r\n,\tLastName\r\n,\tHireDate\r\n,\tFireDate\r\nFROM Employee";
+            var minifier = new SqlMinifier();
+            var results = minifier.Minify(sql);
+            Assert.IsFalse(results.EndsWith(' '));
+        }
+
+        [TestMethod]
+        public void Complicated_Select_Does_Not_Contain_Space_Then_Comma()
+        {
+            var sql = "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nSELECT\r\n\tId\r\n,\tFirstName\r\n,\tLastName\r\n,\tHireDate\r\n,\tFireDate\r\nFROM Employee";
+            var minifier = new SqlMinifier();
+            var results = minifier.Minify(sql);
+            Assert.IsFalse(results.Contains(" ,"));
+        }
+
+        [TestMethod]
+        public void Remove_Tab_From_Simple_Select()
         {
             var sql = "SELECT *\r\n\tFROM Employee";
             var minifier = new SqlMinifier();
             var results = minifier.Minify(sql);
-            Assert.IsFalse(results.Contains("  "));
+            Assert.IsFalse(results.Contains("\t"));
+        }
+
+        [TestMethod]
+        public void Uppercase_Reserved_Word_Select()
+        {
+            var sql = "select *\r\n\tfrom Employee";
+            var minifier = new SqlMinifier();
+            var results = minifier.Minify(sql);
+            Assert.IsFalse(results.Contains("SELECT"));
+        }
+
+        [TestMethod]
+        public void Uppercase_Reserved_Word_From()
+        {
+            var sql = "select *\r\n\tfrom Employee";
+            var minifier = new SqlMinifier();
+            var results = minifier.Minify(sql);
+            Assert.IsFalse(results.Contains("FROM"));
         }
     }
 }
