@@ -47,5 +47,48 @@ namespace bleak.Sql.Minifier
             return sb.ToString()
                 .Trim();
         }
+
+        public string JamalFormat(string sql)
+        {
+            var cleanedSql = sql.Replace("\r", " ")
+                .Replace("\n", " ")
+                .Replace("\t", " ")
+                .Replace("  ", " ");
+
+            var sb = new StringBuilder();
+
+            var cleanedSqlWordArray = cleanedSql.Split(' ');
+            foreach (var word in cleanedSqlWordArray)
+            {
+                if (word.Trim().Length > 0)
+                {
+                    if (word == ",")
+                    {
+                        if (sb.ToString().EndsWith(" ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            sb.Remove(sb.Length - 1, 1);
+                        }
+                    }
+                    if (ReservedWords.Contains(word.ToUpper()))
+                    {
+                        sb.Append(word.ToUpper());
+                    }
+                    else
+                    {
+                        sb.Append(word);
+                    }
+                    if (word == ",")
+                    {
+                        sb.Append("\t");
+                    }
+                    else
+                    {
+                        sb.Append("\n");
+                    }
+                }
+            }
+            return sb.ToString()
+                .Trim();
+        }
     }
 }
