@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace bleak.Sql.Minifier
 {
@@ -50,6 +51,9 @@ namespace bleak.Sql.Minifier
 
         public string JamalFormat(string sql)
         {
+            var regex = new Regex("([\\s.]+|\"([^\"]*)\"|'([^']*)')");
+            var words = regex.Split(sql).Select(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
             var cleanedSql = sql.Replace("\r", " ")
                 .Replace("\n", " ")
                 .Replace("\t", " ")
