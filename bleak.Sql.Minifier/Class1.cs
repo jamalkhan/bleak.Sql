@@ -1,12 +1,13 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace bleak.Sql.Minifier
 {
     public class SqlMinifier
     {
-        string[] ReservedWords = {
+        private string[] ReservedWords = {
             "ADD", "ADD CONSTRAINT", "ALTER", "ALTER COLUMN", "ALTER TABLE", "ALL", "AND", "ANY", "AS", "ASC", "BACKUP DATABASE", "BETWEEN", "CASE", "CHECK", "COLUMN", "CONTRAINT",
             "CREATE", "CREATE DATABASE", "CREATE INDEX", "CREATE OR REPLACE VIEW", "CREATE TABLE", "CREATE PROCEDURE", "CREATE UNIQUE INDEX", "CREATE VIEW",
                       "DATABASE", "DEFAULT", "DELETE", "DESC", "DESTINCT", "DROP", "DROP COLUMN", "DROP CONSTRAINT", "DROP DATABASE", "DROP DEFAULT", "DROP INDEX", "DROP TABLE",
@@ -14,6 +15,95 @@ namespace bleak.Sql.Minifier
                       "IS NULL", "IS NOT NULL", "JOIN", "LEFT JOIN", "LIKE", "LIMIT", "NOT", "NOT NULL", "OR", "ORDER BY", "OUTER JOIN", "PRIMARY KEY", "PROCEDURE", "RIGHT JOIN",
                       "ROWNUM", "SELECT", "SELECT DISTINCT", "SELECT INTO", "SELECT TOP", "SET", "TABLE", "TOP", "TRUNCATE TABLE", "UNION", "UNION ALL", "UNIQUE", "UPDATE", "VALUES", "VIEW", "WHERE"
             };
+
+        public string[] LoadWordArray(string sql)
+        {
+            var words = new List<string>();
+            //var spaceSplit = sql.Split(' ').ToList();
+            Regex quotes = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            
+            var spaceSplit = quotes.Split(sql).ToList();
+            var periodSplit = SemicolonSplit(spaceSplit, ".");
+            var finalSplit = SemicolonSplit(periodSplit, ";");
+            
+            for (int i = 0; i < finalSplit.Count; i++)
+            {
+                var word = finalSplit[i];
+                if (word.Contains("'"))
+                {
+                    HandleQuotes(words, finalSplit, ref i, ref word, "'");
+                }
+                if (word.Contains("\""))
+                {
+                    HandleQuotes(words, finalSplit, ref i, ref word, "\"");
+                }
+                if (word.Contains("["))
+                {
+                    HandleQuotes(words, finalSplit, ref i, ref word, "[", "]");
+                }
+                if (!word.Contains("'") && !word.Contains("\"") && !word.Contains("["))
+                {
+                    words.Add(word);
+                }
+            }
+
+            return words.ToArray();
+        }
+
+        private static List<string> SemicolonSplit(List<string> spaceSplit, string splitter)
+        {
+            var words = new List<string>();
+            for (int i = 0; i < spaceSplit.Count; i++)
+            {
+                var word = spaceSplit[i];
+                if (word.Contains(splitter))
+                {
+                    var subsplit = word.Split(splitter.ToCharArray());
+                    foreach (var subword in subsplit)
+                    {
+                        words.Add(string.IsNullOrWhiteSpace(subword) ? splitter : subword);
+                    }
+                }
+                else
+                {
+                    words.Add(word);
+                }
+            }
+
+            return words;
+        }
+
+        private static void HandleQuotes(List<string> words, List<string> spaceSplit, ref int i, ref string word, string delimiter, string endlimiter = null)
+        {
+            if (endlimiter == null)
+            {
+                endlimiter = delimiter;
+            }
+
+            if (word.StartsWith(delimiter) && !word.EndsWith(endlimiter))
+            {
+                var sb = new StringBuilder();
+                sb.Append(word);
+                do
+                {
+                    word = spaceSplit[++i];
+                    if (word.Contains(endlimiter) && !word.EndsWith(endlimiter))
+                    {
+                        sb.Append(word);
+                    }
+                    else
+                    {
+                        sb.Append(word);
+                    }
+                } while (!word.Contains(endlimiter));
+                words.Add(sb.ToString());
+                word = spaceSplit[++i];
+            }
+            else if (word.StartsWith(delimiter) && !word.EndsWith(endlimiter))
+            {
+                words.Add(word);
+            }
+        }
 
         public string Minify(string sql)
         {
@@ -24,7 +114,7 @@ namespace bleak.Sql.Minifier
 
             var sb = new StringBuilder();
 
-            var cleanedSqlWordArray = cleanedSql.Split(' ');
+            var cleanedSqlWordArray = LoadWordArray(cleanedSql);
             foreach (var word in cleanedSqlWordArray)
             {
                 if (word.Trim().Length > 0)
@@ -53,42 +143,164 @@ namespace bleak.Sql.Minifier
             var cleanedSql = sql.Replace("\r", " ")
                 .Replace("\n", " ")
                 .Replace("\t", " ")
-                .Replace("  ", " ");
+                .Replace("(", " ( ")
+                .Replace(")", " ) ")
+                .Replace("  ", " ")
+                ;
 
             var sb = new StringBuilder();
 
             var cleanedSqlWordArray = cleanedSql.Split(' ');
-            foreach (var word in cleanedSqlWordArray)
+            int baseTab = 0;
+            Wordset wordset;
+            for (int i = 0; i < cleanedSqlWordArray.Length; i++)
             {
-                if (word.Trim().Length > 0)
+                wordset = LoadWords(cleanedSqlWordArray, i);
+
+                if (wordset.CurrentWord.Trim().Length > 0)
                 {
-                    if (word == ",")
+                    if (ReservedWords.Contains(wordset.UppercaseCurrentWord))
                     {
-                        if (sb.ToString().EndsWith(" ", StringComparison.OrdinalIgnoreCase))
+                        sb.Append(wordset.UppercaseCurrentWord);
+                        switch (wordset.UppercaseCurrentWord)
                         {
-                            sb.Remove(sb.Length - 1, 1);
+                            case "SELECT":
+                                switch (wordset.UppercaseNextWord)
+                                {
+                                    case "DISTINCT":
+                                        wordset = LoadWords(cleanedSqlWordArray, ++i);
+                                        sb.Append(" ");
+                                        sb.Append(wordset.UppercaseCurrentWord);
+                                        sb.Append("\n");
+                                        break;
+                                    case "TOP":
+                                        wordset = LoadWords(cleanedSqlWordArray, ++i);
+                                        sb.Append(" ");
+                                        sb.Append(wordset.UppercaseCurrentWord);
+                                        sb.Append("\n");
+
+                                        wordset = LoadWords(cleanedSqlWordArray, ++i);
+                                        sb.Append(" ");
+                                        sb.Append(wordset.UppercaseCurrentWord);
+                                        break;
+                                }
+                                break;
+                            case "CAST":
+                                //sb.Append(HandleCast(cleanedSqlWordArray, i));
+                                break;
+                            default:
+                                break;
                         }
                     }
-                    if (ReservedWords.Contains(word.ToUpper()))
-                    {
-                        sb.Append(word.ToUpper());
-                    }
                     else
                     {
+                        /*
+                        switch (wordset.UppercaseCurrentWord)
+                        {
+                            case ",":
+                                sb.Append(word);
+                                AddBaseTab(sb, baseTab);
+                                sb.Append("\t");
+                                break;
+                            case "CAST":
+
+                                sb.Append(word);
+                                i++;
+                                LoadWords(cleanedSqlWordArray, i)
+                                break;
+                        }
+
+
                         sb.Append(word);
-                    }
-                    if (word == ",")
-                    {
-                        sb.Append("\t");
-                    }
-                    else
-                    {
-                        sb.Append("\n");
+                        */
                     }
                 }
             }
             return sb.ToString()
                 .Trim();
+        }
+
+        public string HandleCast(string[] castWords)
+        {
+            var sb = new StringBuilder();
+            for (var i = 0; i < castWords.Length; i++)
+            {
+                var word = castWords[i];
+                sb.Append(word);
+                if (castWords.Length > i + 1)
+                {
+                    switch (castWords[i + 1])
+                    {
+                        case "(":
+                        case ")":
+                            break;
+                        default:
+                            if (word == "(")
+                            {
+
+                            }
+                            else
+                            {
+                                sb.Append(" ");
+                            }
+                            break;
+                    }
+                }
+            }
+            return sb.ToString();
+        }
+
+        private class Wordset
+        {
+            public int Index { get; set; }
+            public string CurrentWord { get; set; }
+            public string UppercaseCurrentWord { get; set; }
+
+            public string PreviousWord { get; set; }
+            public string UppercasePreviousWord { get; set; }
+
+            public string NextWord { get; set; }
+            public string UppercaseNextWord { get; set; }
+        }
+
+        private static Wordset LoadWords(string[] cleanedSqlWordArray, int i)
+        {
+            string previous_word = null;
+            string uprevious_word = null;
+            if (i - 1 > 0)
+            {
+                previous_word = cleanedSqlWordArray[i - 1];
+                uprevious_word = previous_word.ToUpperInvariant();
+            }
+
+            string word = cleanedSqlWordArray[i];
+            string uword = word.ToUpperInvariant();
+            string next_word = null;
+            string unext_word = null;
+            if (i + 1 < cleanedSqlWordArray.Length)
+            {
+                next_word = cleanedSqlWordArray[i + 1];
+                unext_word = next_word.ToUpperInvariant();
+            }
+
+            return new Wordset()
+            {
+                Index = i,
+                NextWord = next_word,
+                UppercaseNextWord = unext_word,
+                CurrentWord = word,
+                UppercaseCurrentWord = uword,
+                PreviousWord = previous_word,
+                UppercasePreviousWord = uprevious_word,
+            };
+        }
+
+        private void AddBaseTab(StringBuilder sb, int baseTab)
+        {
+            for (int i = 0; i < baseTab; i++)
+            {
+                sb.Append("\t");
+            }
         }
     }
 }
