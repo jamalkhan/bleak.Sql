@@ -158,14 +158,15 @@ namespace bleak.Sql.Minifier.Tests
             Assert.AreEqual(results[1], "'Jamal H'");
             Assert.AreEqual(results[2], "AS");
             Assert.AreEqual(results[3], "[First Name]");
-            Assert.AreEqual(results[4], "'Khan'");
-            Assert.AreEqual(results[5], "AS");
-            Assert.AreEqual(results[6], "[Last  Name]");
-            Assert.AreEqual(results[7], "FROM");
-            Assert.AreEqual(results[8], "[dbo]");
-            Assert.AreEqual(results[9], ".");
-            Assert.AreEqual(results[10], "[Master Employee]");
-            Assert.AreEqual(results[11], ";");
+            Assert.AreEqual(results[4], ",");
+            Assert.AreEqual(results[5], "'Khan'");
+            Assert.AreEqual(results[6], "AS");
+            Assert.AreEqual(results[7], "[Last  Name]");
+            Assert.AreEqual(results[8], "FROM");
+            Assert.AreEqual(results[9], "[dbo]");
+            Assert.AreEqual(results[10], ".");
+            Assert.AreEqual(results[11], "[Master Employee]");
+            Assert.AreEqual(results[12], ";");
         }
     }
 }

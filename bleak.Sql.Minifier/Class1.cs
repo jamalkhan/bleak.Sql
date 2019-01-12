@@ -53,9 +53,51 @@ namespace bleak.Sql.Minifier
 
             return words.ToArray();
             */
-            var split = regex.Split(sql).Where(s => !string.IsNullOrEmpty(s));
+            var split = regex.Split(sql).Where(s => !string.IsNullOrEmpty(s)).ToArray();
+            var delimitedSplit = new List<string>();
+            for (int i = 0; i < split.Count(); i++)
+            {
+                var word = split[i];
+                if (word.StartsWith("'"))
+                {
+                    var ticksb = new StringBuilder();
+                    while (!word.EndsWith("'"))
+                    {
+                        ticksb.Append(word);
+                        word = split[++i];
+                    }
+                    ticksb.Append(word);
+                    delimitedSplit.Add(ticksb.ToString());
+                }
+                else if (word.StartsWith("\""))
+                {
+                    var ticksb = new StringBuilder();
+                    while (!word.EndsWith("\""))
+                    {
+                        ticksb.Append(word);
+                        word = split[++i];
+                    }
+                    ticksb.Append(word);
+                    delimitedSplit.Add(ticksb.ToString());
+                }
+                else if (word.StartsWith("["))
+                {
+                    var ticksb = new StringBuilder();
+                    while (!word.EndsWith("]"))
+                    {
+                        ticksb.Append(word);
+                        word = split[++i];
+                    }
+                    ticksb.Append(word);
+                    delimitedSplit.Add(ticksb.ToString());
+                }
+                else
+                {
+                    delimitedSplit.Add(word);
+                }
+            }
 
-            return split.ToArray();
+            return delimitedSplit.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
         }
 
         private static List<string> SemicolonSplit(List<string> spaceSplit, string splitter)
