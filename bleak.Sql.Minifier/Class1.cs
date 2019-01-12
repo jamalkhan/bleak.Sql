@@ -20,9 +20,13 @@ namespace bleak.Sql.Minifier
         {
             var words = new List<string>();
             //var spaceSplit = sql.Split(' ').ToList();
-            Regex quotes = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-            
-            var spaceSplit = quotes.Split(sql).ToList();
+            //Regex quotes = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            //var regex = new Regex("([\\s.]+|\"([^\"]*)\"|'([^']*)')");
+
+            // The right breaks!!! YAY
+            var regex = new Regex("([\\s.,;])");
+            /*
+            var spaceSplit = regex.Split(sql).ToList();
             var periodSplit = SemicolonSplit(spaceSplit, ".");
             var finalSplit = SemicolonSplit(periodSplit, ";");
             
@@ -48,6 +52,10 @@ namespace bleak.Sql.Minifier
             }
 
             return words.ToArray();
+            */
+            var split = regex.Split(sql).Where(s => !string.IsNullOrEmpty(s));
+
+            return split.ToArray();
         }
 
         private static List<string> SemicolonSplit(List<string> spaceSplit, string splitter)
