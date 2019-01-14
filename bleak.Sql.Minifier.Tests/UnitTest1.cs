@@ -137,6 +137,22 @@ namespace bleak.Sql.Minifier.Tests
         }
 
         [TestMethod]
+        public void Extract_Cast_String_Test()
+        {
+            var sql = "SELECT CAST('Jamal' AS VARCHAR(50)) FROM [dbo].[Employee];";
+            var minifier = new SqlMinifier();
+            var sqlWords = minifier.LoadWordArray(sql);
+            var castPosition = 1;
+            Assert.IsTrue(sqlWords[castPosition] == "CAST");
+            var cast1 = minifier.GetCast(sqlWords, ref castPosition);
+            Assert.AreEqual(cast1.Length, 9);
+            var results = minifier.HandleCast(cast1);
+            Assert.AreEqual(results, "CAST('Jamal' AS VARCHAR(50))");
+
+
+        }
+
+        [TestMethod]
         public void Load_Word_Array_Test_1()
         {
             string sql = "SELECT * FROM Employee;";

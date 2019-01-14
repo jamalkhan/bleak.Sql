@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -153,6 +154,32 @@ namespace bleak.Sql.Minifier
             }
             return sb.ToString()
                 .Trim();
+        }
+
+        public string[] GetCast(string[] sqlWords, ref int startingPosition)
+        {
+            if (sqlWords[startingPosition] != "CAST")
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+            var retval = new List<string>();
+            retval.Add(sqlWords[startingPosition++]);
+            var terminatedDepth = 0;
+            do
+            {
+                var word = sqlWords[startingPosition];
+                retval.Add(sqlWords[startingPosition]);
+                if (word == "(")
+                {
+                    terminatedDepth++;
+                }
+                if (word == ")")
+                {
+                    terminatedDepth--;
+                }
+                startingPosition++;
+            } while (terminatedDepth > 0);
+            return retval.ToArray();
         }
 
         public string JamalFormat(string sql)
