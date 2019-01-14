@@ -19,40 +19,7 @@ namespace bleak.Sql.Minifier
         public string[] LoadWordArray(string sql)
         {
             var words = new List<string>();
-            //var spaceSplit = sql.Split(' ').ToList();
-            //Regex quotes = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-            //var regex = new Regex("([\\s.]+|\"([^\"]*)\"|'([^']*)')");
-
-            // The right breaks!!! YAY
-            var regex = new Regex("([\\s.,;])");
-            /*
-            var spaceSplit = regex.Split(sql).ToList();
-            var periodSplit = SemicolonSplit(spaceSplit, ".");
-            var finalSplit = SemicolonSplit(periodSplit, ";");
-            
-            for (int i = 0; i < finalSplit.Count; i++)
-            {
-                var word = finalSplit[i];
-                if (word.Contains("'"))
-                {
-                    HandleQuotes(words, finalSplit, ref i, ref word, "'");
-                }
-                if (word.Contains("\""))
-                {
-                    HandleQuotes(words, finalSplit, ref i, ref word, "\"");
-                }
-                if (word.Contains("["))
-                {
-                    HandleQuotes(words, finalSplit, ref i, ref word, "[", "]");
-                }
-                if (!word.Contains("'") && !word.Contains("\"") && !word.Contains("["))
-                {
-                    words.Add(word);
-                }
-            }
-
-            return words.ToArray();
-            */
+            var regex = new Regex("([\\s.,;()])");
             var split = regex.Split(sql).Where(s => !string.IsNullOrEmpty(s)).ToArray();
             var delimitedSplit = new List<string>();
             for (int i = 0; i < split.Count(); i++)
@@ -190,20 +157,10 @@ namespace bleak.Sql.Minifier
 
         public string JamalFormat(string sql)
         {
-            var regex = new Regex("([\\s.]+|\"([^\"]*)\"|'([^']*)')");
-            var words = regex.Split(sql).Select(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-
-            var cleanedSql = sql.Replace("\r", " ")
-                .Replace("\n", " ")
-                .Replace("\t", " ")
-                .Replace("(", " ( ")
-                .Replace(")", " ) ")
-                .Replace("  ", " ")
-                ;
-
+            var cleanedSqlWordArray = LoadWordArray(sql);
+            
             var sb = new StringBuilder();
 
-            var cleanedSqlWordArray = cleanedSql.Split(' ');
             int baseTab = 0;
             Wordset wordset;
             for (int i = 0; i < cleanedSqlWordArray.Length; i++)

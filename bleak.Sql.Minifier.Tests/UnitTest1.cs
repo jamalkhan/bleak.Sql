@@ -115,6 +115,7 @@ namespace bleak.Sql.Minifier.Tests
             var minifier = new SqlMinifier();
             var results = minifier.JamalFormat(sql);
             Assert.IsFalse(results.Contains(";"));
+            Assert.IsTrue(sql.StartsWith("SELECT\n\r\tzid"));
         }
 
         [TestMethod]
@@ -129,10 +130,10 @@ namespace bleak.Sql.Minifier.Tests
         [TestMethod]
         public void Handle_Cast_String()
         {
-            string[] cast = new string[] { "CAST", "(", "NULL", "AS", "DATETIME", ")" };
+            string[] cast = new string[] { "CAST", "(", "NULL", "AS", "VARCHAR", "(", "50", ")", ")" };
             var minifier = new SqlMinifier();
             var results = minifier.HandleCast(cast);
-            Assert.AreEqual(results, "CAST(NULL AS DATETIME)");
+            Assert.AreEqual(results, "CAST(NULL AS VARCHAR(50))");
         }
 
         [TestMethod]
@@ -167,6 +168,33 @@ namespace bleak.Sql.Minifier.Tests
             Assert.AreEqual(results[10], ".");
             Assert.AreEqual(results[11], "[Master Employee]");
             Assert.AreEqual(results[12], ";");
+        }
+
+        [TestMethod]
+        public void Load_Word_Array_Test_3()
+        {
+            string sql = "SELECT * FROM(SELECT 'Jamal H' AS [First Name],  'Khan' AS [Last  Name] FROM [dbo].[Master Employee])innerTable;";
+            var minifier = new SqlMinifier();
+            var results = minifier.LoadWordArray(sql);
+            Assert.AreEqual(results[0], "SELECT");
+            Assert.AreEqual(results[1], "*");
+            Assert.AreEqual(results[2], "FROM");
+            Assert.AreEqual(results[3], "(");
+            Assert.AreEqual(results[4], "SELECT");
+            Assert.AreEqual(results[5], "'Jamal H'");
+            Assert.AreEqual(results[6], "AS");
+            Assert.AreEqual(results[7], "[First Name]");
+            Assert.AreEqual(results[8], ",");
+            Assert.AreEqual(results[9], "'Khan'");
+            Assert.AreEqual(results[10], "AS");
+            Assert.AreEqual(results[11], "[Last  Name]");
+            Assert.AreEqual(results[12], "FROM");
+            Assert.AreEqual(results[13], "[dbo]");
+            Assert.AreEqual(results[14], ".");
+            Assert.AreEqual(results[15], "[Master Employee]");
+            Assert.AreEqual(results[16], ")");
+            Assert.AreEqual(results[17], "innerTable");
+            Assert.AreEqual(results[18], ";");
         }
     }
 }
