@@ -100,12 +100,39 @@ namespace bleak.Sql.Minifier.Tests
     public class FormatterTests
     {
         [TestMethod]
-        public void Formatter_Simple_Select()
+        public void Formatter_Select_Star_From_Employee_Test()
         {
             var sql = "SElect * from Employee";
             var minifier = new SqlMinifier();
             var results = minifier.JamalFormat(sql);
-            Assert.IsFalse(results.Contains(";"));
+            Assert.IsTrue(results.Equals("SELECT\r\n\t*\r\nFROM Employee"));
+        }
+
+        [TestMethod]
+        public void Formatter_Select_Star_From_Employee_Semicolon_Test()
+        {
+            var sql = "SElect * from Employee;";
+            var minifier = new SqlMinifier();
+            var results = minifier.JamalFormat(sql);
+            Assert.IsTrue(results.Equals("SELECT\r\n\t*\r\nFROM Employee;"));
+        }
+
+        [TestMethod]
+        public void Formatter_Select_Distinct_Star_From_Employee_Semicolon_Test()
+        {
+            var sql = "SElect DISTINCT * from Employee;";
+            var minifier = new SqlMinifier();
+            var results = minifier.JamalFormat(sql);
+            Assert.IsTrue(results.Equals("SELECT DISTINCT\r\n\t*\r\nFROM Employee;"));
+        }
+
+        [TestMethod]
+        public void Formatter_Select_Top_50_Star_From_Employee_Semicolon_Test()
+        {
+            var sql = "SElect TOP 50 * from Employee;";
+            var minifier = new SqlMinifier();
+            var results = minifier.JamalFormat(sql);
+            Assert.IsTrue(results.Equals("SELECT TOP 50\r\n\t*\r\nFROM Employee;"));
         }
 
         [TestMethod]
@@ -115,7 +142,7 @@ namespace bleak.Sql.Minifier.Tests
             var minifier = new SqlMinifier();
             var results = minifier.JamalFormat(sql);
             Assert.IsFalse(results.Contains(";"));
-            Assert.IsTrue(sql.StartsWith("SELECT\n\r\tzid"));
+            Assert.IsTrue(sql.StartsWith("SELECT\r\n\tzid"));
         }
 
         [TestMethod]

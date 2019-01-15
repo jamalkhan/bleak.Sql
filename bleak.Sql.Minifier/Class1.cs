@@ -6,8 +6,27 @@ using System.Text.RegularExpressions;
 
 namespace bleak.Sql.Minifier
 {
+    public class Wordset
+    {
+        public int Index { get; set; }
+        public string CurrentWord { get; set; }
+        public string UppercaseCurrentWord { get; set; }
+
+        public string PreviousWord { get; set; }
+        public string UppercasePreviousWord { get; set; }
+
+        public string NextWord { get; set; }
+        public string UppercaseNextWord { get; set; }
+    }
+
     public class SqlMinifier
     {
+        private readonly string _lineEnd;
+        public SqlMinifier(string lineEnd = "\r\n")
+        {
+            _lineEnd = lineEnd;
+        }
+
         private string[] ReservedWords = {
             "ADD", "ADD CONSTRAINT", "ALTER", "ALTER COLUMN", "ALTER TABLE", "ALL", "AND", "ANY", "AS", "ASC", "BACKUP DATABASE", "BETWEEN", "CASE", "CHECK", "COLUMN", "CONTRAINT",
             "CREATE", "CREATE DATABASE", "CREATE INDEX", "CREATE OR REPLACE VIEW", "CREATE TABLE", "CREATE PROCEDURE", "CREATE UNIQUE INDEX", "CREATE VIEW",
@@ -184,77 +203,88 @@ namespace bleak.Sql.Minifier
 
         public string JamalFormat(string sql)
         {
-            var cleanedSqlWordArray = LoadWordArray(sql);
-            
+            var sqlWords = LoadWordArray(sql);
+
             var sb = new StringBuilder();
 
             int baseTab = 0;
-            Wordset wordset;
-            for (int i = 0; i < cleanedSqlWordArray.Length; i++)
+            for (int i = 0; i < sqlWords.Length; i++)
             {
-                wordset = LoadWords(cleanedSqlWordArray, i);
+                var word = sqlWords[i];
 
-                if (wordset.CurrentWord.Trim().Length > 0)
+                if (ReservedWords.Contains(word.ToUpper()))
                 {
-                    if (ReservedWords.Contains(wordset.UppercaseCurrentWord))
-                    {
-                        sb.Append(wordset.UppercaseCurrentWord);
-                        switch (wordset.UppercaseCurrentWord)
-                        {
-                            case "SELECT":
-                                switch (wordset.UppercaseNextWord)
-                                {
-                                    case "DISTINCT":
-                                        wordset = LoadWords(cleanedSqlWordArray, ++i);
-                                        sb.Append(" ");
-                                        sb.Append(wordset.UppercaseCurrentWord);
-                                        sb.Append("\n");
-                                        break;
-                                    case "TOP":
-                                        wordset = LoadWords(cleanedSqlWordArray, ++i);
-                                        sb.Append(" ");
-                                        sb.Append(wordset.UppercaseCurrentWord);
-                                        sb.Append("\n");
+                    word = word.ToUpper();
+                }
 
-                                        wordset = LoadWords(cleanedSqlWordArray, ++i);
-                                        sb.Append(" ");
-                                        sb.Append(wordset.UppercaseCurrentWord);
-                                        break;
-                                }
+                switch (word.ToUpper())
+                {
+                    case "SELECT":
+                        var nextWord = sqlWords[i + 1];
+                        switch (nextWord.ToUpper())
+                        {
+                            case "TOP":
+                                sb.Append(word);
+                                sb.Append(" ");
+                                i++;
+                                sb.Append(sqlWords[i].ToUpper());
+                                sb.Append(" ");
+                                i++;
+                                sb.Append(sqlWords[i]);
+                                sb.Append(_lineEnd);
                                 break;
-                            case "CAST":
-                                //sb.Append(HandleCast(cleanedSqlWordArray, i));
+                            case "DISTINCT":
+                                sb.Append(word);
+                                sb.Append(" ");
+                                i++;
+                                sb.Append(sqlWords[i].ToUpper());
+                                sb.Append(_lineEnd);
                                 break;
                             default:
+                                sb.Append(word);
+                                sb.Append(_lineEnd);
                                 break;
                         }
-                    }
-                    else
-                    {
-                        /*
-                        switch (wordset.UppercaseCurrentWord)
-                        {
-                            case ",":
-                                sb.Append(word);
-                                AddBaseTab(sb, baseTab);
-                                sb.Append("\t");
-                                break;
-                            case "CAST":
-
-                                sb.Append(word);
-                                i++;
-                                LoadWords(cleanedSqlWordArray, i)
-                                break;
-                        }
-
-
+                        AddBaseTab(sb, baseTab);
+                        sb.Append("\t");
+                        break;
+                    case "CAST":
+                        var castWords = GetCast(sqlWords, ref i);
+                        var cast = HandleCast(castWords);
+                        sb.Append(cast);
+                        sb.Append(" ");
+                        break;
+                    case ";":
+                        RemoveTrailingSpaces(sb);
                         sb.Append(word);
-                        */
-                    }
+                        break;
+                    case "FROM":
+                        RemoveTrailingSpaces(sb);
+                        sb.Append(_lineEnd);
+                        AddBaseTab(sb, baseTab);
+                        sb.Append(word);
+                        sb.Append(" ");
+                        break;
+                    default:
+                        sb.Append(word);
+                        sb.Append(" ");
+                        break;
                 }
+
+
+
+
             }
             return sb.ToString()
                 .Trim();
+        }
+
+        private static void RemoveTrailingSpaces(StringBuilder sb)
+        {
+            while (sb.ToString().EndsWith(" "))
+            {
+                sb.Remove(sb.Length - 1, 1);
+            }
         }
 
         public string HandleCast(string[] castWords)
@@ -287,18 +317,6 @@ namespace bleak.Sql.Minifier
             return sb.ToString();
         }
 
-        private class Wordset
-        {
-            public int Index { get; set; }
-            public string CurrentWord { get; set; }
-            public string UppercaseCurrentWord { get; set; }
-
-            public string PreviousWord { get; set; }
-            public string UppercasePreviousWord { get; set; }
-
-            public string NextWord { get; set; }
-            public string UppercaseNextWord { get; set; }
-        }
 
         private static Wordset LoadWords(string[] cleanedSqlWordArray, int i)
         {
