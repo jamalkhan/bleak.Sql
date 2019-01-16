@@ -265,6 +265,10 @@ namespace bleak.Sql.Minifier
                         sb.Append(word);
                         sb.Append(" ");
                         break;
+                    case "(":
+
+
+                        break;
                     default:
                         sb.Append(word);
                         sb.Append(" ");
