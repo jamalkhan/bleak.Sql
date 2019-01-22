@@ -95,7 +95,7 @@ namespace bleak.Sql.Minifier.Tests
             var sql = "select *\r\n\tfrom Employee; select *\r\n\tfrom Employee;";
             var minifier = new SqlMinifier();
             var results = minifier.Minify(sql);
-            Assert.IsFalse(results.Contains(";"));
+            Assert.IsTrue(results.Contains(";"));
         }
     }
     [TestClass]
@@ -141,11 +141,10 @@ namespace bleak.Sql.Minifier.Tests
         public void Formatter_Nested_Select_Test()
         {
             var sql = "SElect TOP 50 * from ( SELECT 'Jamal  H' AS [First Name], 'Khan' AS [Last Name] FROM Employee ) x;";
-
-
-            var minifier = new SqlMinifier();
+            var minifier = new SqlMinifier(tab: "\t");
             var results = minifier.JamalFormat(sql);
-            Assert.IsTrue(results.Equals("SELECT TOP 50\r\n*\r\nFROM\r\n(\r\n\tSELECT\r\n\t\t'Jamal  H' AS [First Name]\r\n\t,\t'Khan' AS [Last Name]\r\n\tFROM\r\n\tEmployee\r\n) x;"));
+            var expected = "SELECT TOP 50\r\n\t*\r\nFROM\r\n(\r\n\tSELECT\r\n\t\t'Jamal  H' AS [First Name]\r\n\t,\t'Khan' AS [Last Name]\r\n\tFROM\r\n\tEmployee\r\n) x;";
+            Assert.AreEqual(expected, results);
         }
 
         [TestMethod]

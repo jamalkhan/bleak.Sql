@@ -160,7 +160,10 @@ namespace bleak.Sql.Minifier
                 {
                     if (word == ",")
                     {
-                        sb.Remove(sb.Length - 1, 1);
+                        if (_tab.EndsWith(" "))
+                        {
+                            sb.Remove(sb.Length - 1, 1);
+                        }
                     }
                     if (ReservedWords.Contains(word))
                     {
@@ -283,9 +286,13 @@ namespace bleak.Sql.Minifier
                         AddBaseTab(sb, baseTab);
                         sb.Append(word);
                         sb.Append(_tab);
-                        sb.Remove(sb.Length - 1, 1);
+                        if (_tab.EndsWith(" "))
+                        {
+                            sb.Remove(sb.Length - 1, 1);
+                        }
                         break;
                     case "(":
+                        RemoveTrailingWhitespace(sb);
                         sb.Append(_lineEnd);
                         AddBaseTab(sb, baseTab);
                         sb.Append(word);
@@ -394,6 +401,8 @@ namespace bleak.Sql.Minifier
             var terminated = false;
             do
             {
+
+
                 output.Add(word);
                 startingPosition++;
                 word = sqlWords[startingPosition];
@@ -434,6 +443,10 @@ namespace bleak.Sql.Minifier
             for (var i = 0; i < castWords.Length; i++)
             {
                 var word = castWords[i];
+                if (word == ",")
+                {
+                    RemoveTrailingWhitespace(sb);
+                }
                 sb.Append(word);
                 if (castWords.Length > i + 1)
                 {
