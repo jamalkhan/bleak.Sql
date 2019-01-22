@@ -15,4 +15,10 @@
   <ItemGroup>
     <ProjectReference Include="..\bleak.Sql.Minifier\bleak.Sql.Minifier.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Ultimate_Format_Test.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

@@ -22,9 +22,11 @@ namespace bleak.Sql.Minifier
     public class SqlMinifier
     {
         private readonly string _lineEnd;
-        public SqlMinifier(string lineEnd = "\r\n")
+        private readonly string _tab;
+        public SqlMinifier(string lineEnd = "\r\n", string tab = "\t")
         {
             _lineEnd = lineEnd;
+            _tab = tab;
         }
 
         private string[] ReservedWords = {
@@ -175,9 +177,9 @@ namespace bleak.Sql.Minifier
                 .Trim();
         }
 
-        public string[] GetCast(string[] sqlWords, ref int startingPosition)
+        public string[] GetCast(string[] sqlWords, ref int startingPosition, string sql_function)
         {
-            if (sqlWords[startingPosition] != "CAST")
+            if (sqlWords[startingPosition] != sql_function)
             {
                 throw new ArgumentOutOfRangeException();
             }
@@ -198,6 +200,7 @@ namespace bleak.Sql.Minifier
                 }
                 startingPosition++;
             } while (terminatedDepth > 0);
+            startingPosition--;
             return retval.ToArray();
         }
 
@@ -220,6 +223,7 @@ namespace bleak.Sql.Minifier
                 switch (word.ToUpper())
                 {
                     case "SELECT":
+                        AddBaseTab(sb, baseTab);
                         var nextWord = sqlWords[i + 1];
                         switch (nextWord.ToUpper())
                         {
@@ -246,32 +250,84 @@ namespace bleak.Sql.Minifier
                                 break;
                         }
                         AddBaseTab(sb, baseTab);
-                        sb.Append("\t");
+                        sb.Append(_tab);
                         break;
                     case "CAST":
-                        var castWords = GetCast(sqlWords, ref i);
+                    case "DATEADD":
+                    case "DATEDIFF":
+                        var castWords = GetCast(sqlWords, ref i, sql_function: word);
                         var cast = HandleCast(castWords);
                         sb.Append(cast);
                         sb.Append(" ");
                         break;
+                    case "WHERE":
+                    case "AND":
+                        var whereWords = GetWhere(sqlWords, ref i, sql_function: word);
+                        var where = HandleCast(whereWords);
+                        AddBaseTab(sb, baseTab);
+                        sb.Append(where);
+                        sb.Append(_lineEnd);
+                        break;
                     case ";":
-                        RemoveTrailingSpaces(sb);
+                        RemoveTrailingWhitespace(sb);
                         sb.Append(word);
                         break;
                     case "FROM":
-                        RemoveTrailingSpaces(sb);
+                        RemoveTrailingWhitespace(sb);
                         sb.Append(_lineEnd);
                         AddBaseTab(sb, baseTab);
                         sb.Append(word);
                         sb.Append(" ");
                         break;
-                    case "(":
-
-
+                    case ",":
+                        AddBaseTab(sb, baseTab);
+                        sb.Append(word);
+                        sb.Append(_tab);
+                        sb.Remove(sb.Length - 1, 1);
                         break;
-                    default:
+                    case "(":
+                        sb.Append(_lineEnd);
+                        AddBaseTab(sb, baseTab);
+                        sb.Append(word);
+                        sb.Append(_lineEnd);
+                        baseTab++;
+                        break;
+                    case ")":
+                        baseTab--;
+                        AddBaseTab(sb, baseTab);
                         sb.Append(word);
                         sb.Append(" ");
+                        break;
+                    case "=":
+                        RemoveTrailingWhitespace(sb);
+                        sb.Append(" ");
+                        sb.Append(word);
+                        sb.Append(" ");
+                        break;
+                    case ".":
+                        RemoveTrailingWhitespace(sb);
+                        sb.Append(word);
+                        break;
+                    case "AS":
+                        RemoveTrailingWhitespace(sb);
+                        sb.Append(" ");
+                        sb.Append(word);
+                        sb.Append(" ");
+                        break;
+                    case "JOIN":
+                    case "ON":
+                        AddBaseTab(sb, baseTab);
+                        sb.Append(word);
+                        sb.Append(" ");
+                        break;
+                    default:
+                        //if (sb.ToString().EndsWith($" AS{_lineEnd}"))
+                        //{
+                        //    RemoveTrailingWhitespace(sb);
+                        //    sb.Append(" ");
+                        //}
+                        sb.Append(word);
+                        sb.Append(_lineEnd);
                         break;
                 }
 
@@ -283,9 +339,90 @@ namespace bleak.Sql.Minifier
                 .Trim();
         }
 
-        private static void RemoveTrailingSpaces(StringBuilder sb)
+        private string[] WhereTerminators = new string[] { "AND", ";", ")" };
+        public string[] GetWhere(string[] sqlWords, ref int startingPosition, string sql_function)
         {
-            while (sb.ToString().EndsWith(" "))
+            if (sqlWords[startingPosition] != sql_function)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+            var retval = new List<string>();
+            retval.Add(sqlWords[startingPosition++]);
+            var terminated = false;
+            do
+            {
+                if (startingPosition > sqlWords.Length - 1
+                    
+                    
+                    )
+                {
+                    break;
+                }
+
+                var word = sqlWords[startingPosition];
+                if (WhereTerminators.Contains(word) || startingPosition > sqlWords.Length)
+                {
+                    terminated = true;
+                    break;
+                }
+                else
+                {
+                    retval.Add(sqlWords[startingPosition]);
+                }
+                if (word == "(")
+                {
+                    GetParantheses(sqlWords, ref startingPosition, ref retval);
+                }
+                if (word == "BETWEEN")
+                {
+                    GetBetween(sqlWords, ref startingPosition, ref retval);
+                }
+                startingPosition++;
+            } while (!terminated);
+            startingPosition--;
+            return retval.ToArray();
+        }
+
+        public void GetParantheses(string[] sqlWords, ref int startingPosition, ref List<string> output)
+        {
+            if (sqlWords[startingPosition] != "(")
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
+            var word = sqlWords[startingPosition];
+            var terminated = false;
+            do
+            {
+                output.Add(word);
+                startingPosition++;
+                word = sqlWords[startingPosition];
+                if (word == "(")
+                {
+                    GetParantheses(sqlWords, ref startingPosition, ref output);
+                }
+                terminated = word == ")" || startingPosition > sqlWords.Length;
+            } while (!terminated);
+            output.Add(word);
+        }
+
+        public void GetBetween(string[] sqlWords, ref int startingPosition, ref List<string> output)
+        {
+            if (sqlWords[startingPosition] != "BETWEEN")
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
+            output.Add(sqlWords[startingPosition++]);
+            output.Add(sqlWords[startingPosition++]);
+            output.Add(sqlWords[startingPosition++]);
+            output.Add(sqlWords[startingPosition++]);
+        }
+
+        private readonly string[] whitespaceCharacters = new string[] { " ", "\r", "\n", "\t" };
+        private void RemoveTrailingWhitespace(StringBuilder sb)
+        {
+            while ((whitespaceCharacters.Where(s => sb.ToString().EndsWith(s)).Count() > 0))
             {
                 sb.Remove(sb.Length - 1, 1);
             }
@@ -358,7 +495,7 @@ namespace bleak.Sql.Minifier
         {
             for (int i = 0; i < baseTab; i++)
             {
-                sb.Append("\t");
+                sb.Append(_tab);
             }
         }
     }

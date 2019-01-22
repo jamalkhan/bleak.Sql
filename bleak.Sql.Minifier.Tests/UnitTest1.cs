@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using bleak.Sql.Minifier;
+using System.IO;
+using System.Collections.Generic;
 
 namespace bleak.Sql.Minifier.Tests
 {
@@ -150,10 +152,10 @@ namespace bleak.Sql.Minifier.Tests
         public void Formatter_Ultimate_Test()
         {
             var sql = "SELECT zid , shopper_id , session_start_date , session_end_date , session_length_minutes , session_length_seconds , is_purchase FROM ( SELECT DISTINCT zid , shopper_id , CAST(NULL AS Datetime) as session_start_date , session_end_date , CAST(NULL AS BIGINT) AS session_length_minutes , CAST(NULL AS BIGINT) AS session_length_seconds , 1 AS is_purchase FROM ( SELECT purchase_events.sid , purchase_events.zid , DATEADD(ms, purchase_events.createdat - datediff(ms, '1970-01-01', getdate()), GETDATE()) as session_end_date , si3.shopper_id FROM ( SELECT sid, zid, createdat FROM data_onboarding.web_purchase_confirm WHERE zid IS NOT NULL ) purchase_events JOIN ( SELECT shopper_id , id_value as zid FROM shopper360.shopper_identifier WHERE id_type = 'zid' ) si3 ON si3.zid = purchase_events.zid ) synthesized_purchase_events ) ins_table";
-            var minifier = new SqlMinifier();
+            var minifier = new SqlMinifier(tab: "    ");
             var results = minifier.JamalFormat(sql);
-            Assert.IsFalse(results.Contains(";"));
-            Assert.IsTrue(sql.StartsWith("SELECT\r\n\tzid"));
+            string contents = File.ReadAllText(@"Ultimate_Format_Test.sql");
+            Assert.AreEqual(contents, results);
         }
 
         [TestMethod]
@@ -177,17 +179,64 @@ namespace bleak.Sql.Minifier.Tests
         [TestMethod]
         public void Extract_Cast_String_Test()
         {
-            var sql = "SELECT CAST('Jamal' AS VARCHAR(50)) FROM [dbo].[Employee];";
+            var sql = "SELECT CAST('Jamal' AS VARCHAR(50)) AS FirstName FROM [dbo].[Employee];";
             var minifier = new SqlMinifier();
             var sqlWords = minifier.LoadWordArray(sql);
             var castPosition = 1;
             Assert.IsTrue(sqlWords[castPosition] == "CAST");
-            var cast1 = minifier.GetCast(sqlWords, ref castPosition);
+            var cast1 = minifier.GetCast(sqlWords, ref castPosition, sql_function: "CAST");
             Assert.AreEqual(cast1.Length, 9);
+            Assert.AreEqual(castPosition, 9);
             var results = minifier.HandleCast(cast1);
             Assert.AreEqual(results, "CAST('Jamal' AS VARCHAR(50))");
+        }
 
 
+        [TestMethod]
+        public void Extract_Where_String_Test()
+        {
+            var sql = "SELECT CAST('Jamal' AS VARCHAR(50)) AS FirstName FROM [dbo].[Employee] WHERE LastName IS NOT NULL;";
+            var minifier = new SqlMinifier();
+            var sqlWords = minifier.LoadWordArray(sql);
+            var castPosition = 16;
+            Assert.IsTrue(sqlWords[castPosition] == "WHERE");
+            var cast1 = minifier.GetWhere(sqlWords, ref castPosition, sql_function: "WHERE");
+            Assert.AreEqual(cast1.Length, 5);
+            Assert.AreEqual(castPosition, 20);
+            var results = minifier.HandleCast(cast1);
+            Assert.AreEqual(results, "WHERE LastName IS NOT NULL");
+        }
+
+        [TestMethod]
+        public void Get_Parentheses_Test()
+        {
+            var sql = "SELECT * FROM [dbo].[Employee] WHERE LastName IN ('Khan', 'Smith');";
+            var minifier = new SqlMinifier();
+            var sqlWords = minifier.LoadWordArray(sql);
+            var castPosition = 9;
+            Assert.IsTrue(sqlWords[castPosition] == "(");
+            var output = new List<string>();
+            minifier.GetParantheses(sqlWords, startingPosition: ref castPosition, output: ref output);
+            Assert.AreEqual(output.Count, 5);
+            Assert.AreEqual(castPosition, 13);
+            var results = minifier.HandleCast(output.ToArray());
+            Assert.AreEqual(results, "('Khan', 'Smith')");
+        }
+
+        [TestMethod]
+        public void Get_Between_Test()
+        {
+            var sql = "SELECT * FROM [dbo].[Employee] WHERE StartDate BETWEEN '1/21/2018' AND '1/21/2019'";
+            var minifier = new SqlMinifier();
+            var sqlWords = minifier.LoadWordArray(sql);
+            var castPosition = 8;
+            Assert.IsTrue(sqlWords[castPosition] == "BETWEEN");
+            var output = new List<string>();
+            minifier.GetBetween(sqlWords, startingPosition: ref castPosition, output: ref output);
+            Assert.AreEqual(output.Count, 4);
+            Assert.AreEqual(castPosition, 12);
+            var results = minifier.HandleCast(output.ToArray());
+            Assert.AreEqual(results, "BETWEEN '1/21/2018' AND '1/21/2019'");
         }
 
         [TestMethod]
