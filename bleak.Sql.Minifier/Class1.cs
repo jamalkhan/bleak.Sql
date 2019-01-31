@@ -35,7 +35,8 @@ namespace bleak.Sql.Minifier
                       "DATABASE", "DEFAULT", "DELETE", "DESC", "DESTINCT", "DROP", "DROP COLUMN", "DROP CONSTRAINT", "DROP DATABASE", "DROP DEFAULT", "DROP INDEX", "DROP TABLE",
                       "DROP VIEW", "EXEC", "EXISTS", "FOREIGN KEY", "FROM", "FULL OUTER JOIN", "GROUP BY", "HAVING", "IN", "INDEX", "INNER JOIN", "INSERT INTO", "INSERT INTO SELECT",
                       "IS NULL", "IS NOT NULL", "JOIN", "LEFT JOIN", "LIKE", "LIMIT", "NOT", "NOT NULL", "OR", "ORDER BY", "OUTER JOIN", "PRIMARY KEY", "PROCEDURE", "RIGHT JOIN",
-                      "ROWNUM", "SELECT", "SELECT DISTINCT", "SELECT INTO", "SELECT TOP", "SET", "TABLE", "TOP", "TRUNCATE TABLE", "UNION", "UNION ALL", "UNIQUE", "UPDATE", "VALUES", "VIEW", "WHERE"
+                      "ROWNUM", "SELECT", "SELECT DISTINCT", "SELECT INTO", "SELECT TOP", "SET", "TABLE", "TOP", "TRUNCATE TABLE", "UNION", "UNION ALL", "UNIQUE", "UPDATE", "VALUES", "VIEW", "WHERE",
+                      "DATEDIFF", "DATEADD", "GETDATE"
             };
 
         public string[] LoadWordArray(string sql)
@@ -82,6 +83,10 @@ namespace bleak.Sql.Minifier
                 }
                 else
                 {
+                    if (ReservedWords.Contains(word))
+                    {
+                        word = word.ToUpper();
+                    }
                     delimitedSplit.Add(word);
                 }
             }
@@ -192,7 +197,12 @@ namespace bleak.Sql.Minifier
             do
             {
                 var word = sqlWords[startingPosition];
-                retval.Add(sqlWords[startingPosition]);
+                if (ReservedWords.Contains(word.ToUpper()))
+                {
+                    word = word.ToUpper();
+                }
+
+                retval.Add(word);
                 if (word == "(")
                 {
                     terminatedDepth++;
@@ -312,6 +322,8 @@ namespace bleak.Sql.Minifier
                         sb.Append(" ");
                         break;
                     case ".":
+                        // TODO: Remove this after debugging;
+                        string s = sb.ToString();
                         RemoveTrailingWhitespace(sb);
                         sb.Append(word);
                         break;
@@ -358,10 +370,7 @@ namespace bleak.Sql.Minifier
             var terminated = false;
             do
             {
-                if (startingPosition > sqlWords.Length - 1
-                    
-                    
-                    )
+                if (startingPosition > sqlWords.Length - 1)
                 {
                     break;
                 }
@@ -447,7 +456,17 @@ namespace bleak.Sql.Minifier
                 {
                     RemoveTrailingWhitespace(sb);
                 }
-                sb.Append(word);
+                switch (word)
+                {
+                    case ".":
+                        RemoveTrailingWhitespace(sb);
+                        sb.Append(word);
+                        break;
+                    default:
+                        sb.Append(word);
+                        break;
+                }
+
                 if (castWords.Length > i + 1)
                 {
                     switch (castWords[i + 1])
@@ -455,14 +474,16 @@ namespace bleak.Sql.Minifier
                         case "(":
                         case ")":
                             break;
-                        default:
-                            if (word == "(")
-                            {
 
-                            }
-                            else
+                        default:
+                            switch (word)
                             {
-                                sb.Append(" ");
+                                case "(":
+                                case ".":
+                                    break;
+                                default:
+                                    sb.Append(" ");
+                                    break;
                             }
                             break;
                     }

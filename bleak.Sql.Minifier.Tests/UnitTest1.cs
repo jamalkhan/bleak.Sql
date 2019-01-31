@@ -150,11 +150,11 @@ namespace bleak.Sql.Minifier.Tests
         [TestMethod]
         public void Formatter_Ultimate_Test()
         {
-            var sql = "SELECT zid , shopper_id , session_start_date , session_end_date , session_length_minutes , session_length_seconds , is_purchase FROM ( SELECT DISTINCT zid , shopper_id , CAST(NULL AS Datetime) as session_start_date , session_end_date , CAST(NULL AS BIGINT) AS session_length_minutes , CAST(NULL AS BIGINT) AS session_length_seconds , 1 AS is_purchase FROM ( SELECT purchase_events.sid , purchase_events.zid , DATEADD(ms, purchase_events.createdat - datediff(ms, '1970-01-01', getdate()), GETDATE()) as session_end_date , si3.shopper_id FROM ( SELECT sid, zid, createdat FROM data_onboarding.web_purchase_confirm WHERE zid IS NOT NULL ) purchase_events JOIN ( SELECT shopper_id , id_value as zid FROM shopper360.shopper_identifier WHERE id_type = 'zid' ) si3 ON si3.zid = purchase_events.zid ) synthesized_purchase_events ) ins_table";
+            var sql = File.ReadAllText(@"Formatter_Ultimate_Test_Input.sql");
             var minifier = new SqlMinifier(tab: "    ");
             var results = minifier.JamalFormat(sql);
-            string contents = File.ReadAllText(@"Ultimate_Format_Test.sql");
-            Assert.AreEqual(contents, results);
+            string expected = File.ReadAllText(@"Formatter_Ultimate_Test_Expected.sql");
+            Assert.AreEqual(expected, results);
         }
 
         [TestMethod]

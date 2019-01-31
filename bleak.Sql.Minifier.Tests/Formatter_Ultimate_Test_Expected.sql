@@ -11,7 +11,7 @@ FROM
     SELECT DISTINCT
         zid
     ,   shopper_id
-    ,   CAST(NULL AS Datetime) as session_start_date
+    ,   CAST(NULL AS Datetime) AS session_start_date
     ,   session_end_date
     ,   CAST(NULL AS BIGINT) AS session_length_minutes
     ,   CAST(NULL AS BIGINT) AS session_length_seconds
@@ -21,7 +21,7 @@ FROM
         SELECT
             purchase_events.sid
         ,   purchase_events.zid
-        ,   DATEADD(ms, purchase_events.createdat - DATEDIFF(ms, '1970-01-01', GETDATE()), GETDATE()) as session_end_date
+        ,   DATEADD(ms, purchase_events.createdat - DATEDIFF(ms, '1970-01-01', GETDATE()), GETDATE()) AS session_end_date
         ,   si3.shopper_id
         FROM
         (
@@ -36,7 +36,7 @@ FROM
         (
             SELECT
                 shopper_id
-            ,   id_value as zid
+            ,   id_value AS zid
             FROM shopper360.shopper_identifier
             WHERE id_type = 'zid'
         ) si3
