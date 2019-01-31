@@ -1,0 +1,37 @@
+# Build ASP.NET Core project using Azure Pipelines
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core?view=vsts
+
+pool:
+  vmImage: 'Ubuntu 16.04'
+#  vmImage: 'vs2017-win2016'
+  
+variables:
+  buildConfiguration: 'Release'
+  Major: '0'
+  Minor: '9'
+  Patch: '0'
+
+
+steps:
+- script: |
+    dotnet restore bleak.Sql.Minifier/bleak.Sql.Minifier.csproj
+    dotnet restore bleak.Api.Rest.Common.Tests/bleak.Api.Rest.Common.Tests.csproj
+    dotnet build bleak.Sql.Minifier/bleak.Sql.Minifier.csproj --configuration $(buildConfiguration)
+    dotnet build bleak.Api.Rest.Common.Tests/bleak.Api.Rest.Common.Tests.csproj --configuration $(buildConfiguration)
+    dotnet test bleak.Api.Rest.Tests --configuration $(buildConfiguration) --logger trx
+    dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'
+
+- task: PublishBuildArtifacts@1
+
+- task: NuGetCommand@2
+  inputs:
+    command: push
+    nuGetFeedType: external
+    publishFeedCredentials: 'NuGetConnection'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
