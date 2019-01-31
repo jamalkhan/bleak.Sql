@@ -173,12 +173,29 @@ namespace bleak.Sql.Minifier
                     if (ReservedWords.Contains(word))
                     {
                         sb.Append(word.ToUpper());
+                        sb.Append(" ");
                     }
                     else
                     {
-                        sb.Append(word);
+                        switch (word.ToUpper())
+                        {
+                            case ".":
+                            case ",":
+                            case "(":
+                            case ")":
+                                RemoveTrailingWhitespace(sb);
+                                sb.Append(word);
+                                break;
+                            default:
+                                sb.Append(word);
+                                sb.Append(" ");
+                                break;
+                        }
+                        
                     }
-                    sb.Append(" ");
+
+                    
+                    
                 }
             }
             return sb.ToString()

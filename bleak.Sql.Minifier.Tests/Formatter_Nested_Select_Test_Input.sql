@@ -1,0 +1,1 @@
+﻿SElect TOP 50 * from ( SELECT 'Jamal  H' AS [First Name], 'Khan' AS [Last Name] FROM Employee ) x;

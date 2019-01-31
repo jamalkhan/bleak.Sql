@@ -140,10 +140,10 @@ namespace bleak.Sql.Minifier.Tests
         [TestMethod]
         public void Formatter_Nested_Select_Test()
         {
-            var sql = "SElect TOP 50 * from ( SELECT 'Jamal  H' AS [First Name], 'Khan' AS [Last Name] FROM Employee ) x;";
-            var minifier = new SqlMinifier(tab: "\t");
+            var sql = File.ReadAllText(@"Formatter_Nested_Select_Test_Input.sql");
+            var minifier = new SqlMinifier(tab: "    ");
             var results = minifier.JamalFormat(sql);
-            var expected = "SELECT TOP 50\r\n\t*\r\nFROM\r\n(\r\n\tSELECT\r\n\t\t'Jamal  H' AS [First Name]\r\n\t,\t'Khan' AS [Last Name]\r\n\tFROM\r\n\tEmployee\r\n) x;";
+            var expected = File.ReadAllText(@"Formatter_Nested_Select_Test_Expected.sql");
             Assert.AreEqual(expected, results);
         }
 
