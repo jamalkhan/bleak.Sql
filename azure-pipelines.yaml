@@ -16,22 +16,42 @@ steps:
 - script: |
     dotnet restore bleak.Sql.Minifier/bleak.Sql.Minifier.csproj
     dotnet restore bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj
+  displayName: Restore
+  name: Restore
+
+- script: |
     dotnet build bleak.Sql.Minifier/bleak.Sql.Minifier.csproj --configuration $(buildConfiguration)
     dotnet build bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj --configuration $(buildConfiguration)
     dotnet test bleak.Sql.Tests --configuration $(buildConfiguration) --logger trx
     dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
+  displayName: Build
+  name: Build
+
+- script: |
+    dotnet test bleak.Sql.Tests --configuration $(buildConfiguration) --logger trx
+  displayName: Tests
+  name: Tests
+
+- script: |
+    dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
+  displayName: Pack
+  name: Pack
+
 
 - task: PublishTestResults@2
   condition: succeededOrFailed()
+  displayName: Publish Test Results
   inputs:
     testRunner: VSTest
     testResultsFiles: '**/*.trx'
 
 - task: PublishBuildArtifacts@1
+  displayName: Publish Artifacts
 
 - task: NuGetCommand@2
+  displayName: Deploy to Nuget.org
   inputs:
     command: push
     nuGetFeedType: external
-    publishFeedCredentials: 'Nuget Deployment'
+    publishFeedCredentials: 'NuGetConnection'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
