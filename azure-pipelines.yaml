@@ -22,13 +22,11 @@ steps:
 - script: |
     dotnet build bleak.Sql.Minifier/bleak.Sql.Minifier.csproj --configuration $(buildConfiguration)
     dotnet build bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj --configuration $(buildConfiguration)
-    dotnet test bleak.Sql.Tests --configuration $(buildConfiguration) --logger trx
-    dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
   displayName: Build
   name: Build
 
 - script: |
-    dotnet test bleak.Sql.Tests --configuration $(buildConfiguration) --logger trx
+    dotnet test bleak.Sql.Minifier.Tests --configuration $(buildConfiguration) --logger trx
   displayName: Tests
   name: Tests
 
@@ -36,7 +34,6 @@ steps:
     dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
   displayName: Pack
   name: Pack
-
 
 - task: PublishTestResults@2
   condition: succeededOrFailed()
