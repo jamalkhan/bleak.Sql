@@ -15,10 +15,10 @@ variables:
 steps:
 - script: |
     dotnet restore bleak.Sql.Minifier/bleak.Sql.Minifier.csproj
-    dotnet restore bleak.Api.Rest.Common.Tests/bleak.Api.Rest.Common.Tests.csproj
+    dotnet restore bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj
     dotnet build bleak.Sql.Minifier/bleak.Sql.Minifier.csproj --configuration $(buildConfiguration)
-    dotnet build bleak.Api.Rest.Common.Tests/bleak.Api.Rest.Common.Tests.csproj --configuration $(buildConfiguration)
-    dotnet test bleak.Api.Rest.Tests --configuration $(buildConfiguration) --logger trx
+    dotnet build bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj --configuration $(buildConfiguration)
+    dotnet test bleak.Sql.Tests --configuration $(buildConfiguration) --logger trx
     dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
 
 - task: PublishTestResults@2
