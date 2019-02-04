@@ -33,5 +33,5 @@ steps:
   inputs:
     command: push
     nuGetFeedType: external
-    publishFeedCredentials: 'NuGetConnection'
+    publishFeedCredentials: 'Nuget Deployment'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
