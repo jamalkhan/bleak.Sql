@@ -170,6 +170,7 @@ namespace bleak.Sql.Minifier
                             case ",":
                             case "(":
                             case ")":
+                            case ";":
                                 RemoveTrailingWhitespace(sb);
                                 sb.Append(word);
                                 break;
@@ -178,11 +179,7 @@ namespace bleak.Sql.Minifier
                                 sb.Append(" ");
                                 break;
                         }
-                        
                     }
-
-                    
-                    
                 }
             }
             return sb.ToString()
