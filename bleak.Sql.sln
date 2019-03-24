@@ -15,9 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bleak.Sql.VersionManager", "bleak.Sql.VersionManager\bleak.Sql.VersionManager.csproj", "{07E5F68E-9387-475C-9E81-9583556F20B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bleak.Sql.VersionManager", "bleak.Sql.VersionManager\bleak.Sql.VersionManager.csproj", "{07E5F68E-9387-475C-9E81-9583556F20B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bleak.Sql.VersionManager.Tests", "bleak.Sql.VersionManager.Tests\bleak.Sql.VersionManager.Tests.csproj", "{ECD269AA-1CDB-4A1E-85E9-53970F5CD822}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bleak.Sql.VersionManager.Tests", "bleak.Sql.VersionManager.Tests\bleak.Sql.VersionManager.Tests.csproj", "{ECD269AA-1CDB-4A1E-85E9-53970F5CD822}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

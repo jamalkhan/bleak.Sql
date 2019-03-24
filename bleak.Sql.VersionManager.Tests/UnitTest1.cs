@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
 
 namespace bleak.Sql.VersionManager.Tests
@@ -7,28 +8,107 @@ namespace bleak.Sql.VersionManager.Tests
     public class UnitTest1
     {
     }
-    [TestClass]
-    public class ScriptRunning
+
+
+    public abstract class TestBaseClass
     {
-        private SqlServerVersionManager manager = new SqlServerVersionManager(
-            folder: Directory.GetCurrentDirectory(),
-            server: Configuration.Settings.Master.Server,
-            username: Configuration.Settings.Master.Username,
-            password: Configuration.Settings.Master.Password);
-        [TestMethod]
-        public void CreateDatabase()
+        protected string DatabaseName;
+        protected SqlServerVersionManager manager;
+        [TestCleanup]
+        public void Dispose()
         {
-            manager.CreateDatabase(Configuration.Settings.Master.Database);
+            manager.DropDatabase();
+        }
+
+
+        protected TestBaseClass(string testName)
+        {
+            string dbName = Configuration.Settings.Master.Database + testName + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            manager = new SqlServerVersionManager(
+                            folder: Directory.GetCurrentDirectory(),
+                            server: Configuration.Settings.Master.Server,
+                            username: Configuration.Settings.Master.Username,
+                            password: Configuration.Settings.Master.Password,
+                            databaseName: dbName,
+                            createDatabase: true
+                            );
+            DatabaseName = dbName;
         }
     }
     [TestClass]
-    public class ScriptDetection
+    public class VersionManagementTests : TestBaseClass
+    {
+        public VersionManagementTests() : base("_version_management_test_")
+        {
+        }
+    }
+
+    [TestClass]
+    public class CreateDatabaseTests : TestBaseClass
+    {
+        public CreateDatabaseTests() : base("_create_test_")
+        {
+        }
+
+        [TestMethod]
+        public void TestCreateDatabase()
+        {
+            var database = manager.GetDatabase();
+            Assert.IsTrue(database.CreateDate > DateTime.Now.AddMinutes(-5));
+            Assert.IsTrue(DateTime.Now.AddMinutes(5) > database.CreateDate);
+        }
+
+        [TestMethod]
+        public void TestDatabaseHasTables()
+        {
+            var database = manager.GetDatabase();
+            Assert.IsTrue(database.Tables.Count >= 1);
+        }
+
+        [TestMethod]
+        public void TestVersionTableCreated()
+        {
+            var database = manager.GetDatabase();
+            Assert.AreEqual(database.Tables.Count, 1);
+            Assert.IsTrue(database.Tables.Contains("Log", "version"));
+        }
+
+        [TestMethod]
+        public void TestVersionTableStructure()
+        {
+            var database = manager.GetDatabase();
+            var table = database.Tables["Log", "version"];
+            Assert.IsTrue(table.Columns.Contains("Script"));
+            Assert.IsTrue(table.Columns.Contains("DeployDate"));
+        }
+    }
+
+    [TestClass]
+    public class DropDatabaseTests : TestBaseClass
+    {
+        public DropDatabaseTests() : base("drop_database_")
+        {
+        }
+
+
+        [TestMethod]
+        public void CreateDatabase()
+        {
+            manager.DropDatabase();
+            var database = manager.GetDatabase();
+            Assert.IsNull(database);
+        }
+    }
+
+    [TestClass]
+    public class ScriptDetectionTests
     {
         private SqlServerVersionManager manager = new SqlServerVersionManager(
             folder: Directory.GetCurrentDirectory(),
             server: Configuration.Settings.Master.Server,
             username: Configuration.Settings.Master.Username,
-            password: Configuration.Settings.Master.Password);
+            password: Configuration.Settings.Master.Password,
+            databaseName: null);
         [TestMethod]
         public void TestScriptDetectionCount()
         {
