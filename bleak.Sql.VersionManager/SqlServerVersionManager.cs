@@ -1,36 +1,21 @@
-﻿using bleak.Sql.Minifier;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using DataType = Microsoft.SqlServer.Management.Smo.DataType;
 
 namespace bleak.Sql.VersionManager
 {
-    public class Class1 { }
-
-    public class bleakSqlContext : DbContext
-    {
-        public bleakSqlContext() : base() { }
-        public bleakSqlContext(DbContextOptions<bleakSqlContext> options) : base(options)
-        { }
-        public virtual DbSet<VersionLog> VersionLogs { get; set; }
-    }
-
-    [Table("Log", Schema = "version")]
-    public class VersionLog
-    {
-        public string ScriptName { get; set; }
-        public DateTimeOffset DeployDate { get; set; }
-    }
     public class SqlServerVersionManager
     {
+        #region Properties
+        private bleakSqlContext context;
         public const string _VersionSchema = "version";
         public const string _VersionTable = "log";
-
         public string Folder { get; private set; }
         public string ServerInstance { get; private set; }
         public string DatabaseName { get; private set; }
@@ -38,6 +23,10 @@ namespace bleak.Sql.VersionManager
         public string Password { get; private set; }
         public ServerConnection Connection { get; private set; }
         public Server Server { get; private set; }
+        public IList<Script> Scripts { get; set; } = new List<Script>();
+        #endregion Properties
+
+        #region Constructor
         public SqlServerVersionManager(
             string folder,
             string server,
@@ -62,24 +51,21 @@ namespace bleak.Sql.VersionManager
                 CreateDatabase();
             }
             DirSearch(Folder);
-        }
 
-        public IList<Script> Scripts { get; set; } = new List<Script>();
-        public void ExecuteSql(string databaseName, string sql)
-        {
-            var database = new Database(Server, databaseName);
-            database.ExecuteNonQuery(sql);
+            var sqlConnectionStringBuilder = new SqlConnectionStringBuilder();
+            sqlConnectionStringBuilder.UserID = username;
+            sqlConnectionStringBuilder.Password = password;
+            sqlConnectionStringBuilder["Server"] = server;
+            sqlConnectionStringBuilder.InitialCatalog = databaseName;
+            var builder = new DbContextOptionsBuilder<bleakSqlContext>();
+            builder.UseSqlServer(sqlConnectionStringBuilder.ConnectionString);
+            context = new bleakSqlContext(builder.Options);
         }
+        #endregion Constructor
 
-        public Database CreateDatabase()
-        {
-            var database = new Database(Server, DatabaseName);
-            database.Create();
-            IntializeDatabase();
-            return GetDatabase();
-        }
+        #region Internal Methods
 
-        public void IntializeDatabase()
+        private void IntializeDatabase()
         {
             var database = GetDatabase();
             if (!database.Schemas.Contains(_VersionSchema))
@@ -87,12 +73,10 @@ namespace bleak.Sql.VersionManager
                 var schema = new Schema(database, "version");
                 schema.Create();
             }
-            
+
             if (!database.Tables.Contains(_VersionTable, _VersionSchema))
             {
-
                 var table = new Table(database, "Log", "version");
-
 
                 var scriptColumnName = "Script";
                 var deployDateColumnName = "DeployDate";
@@ -116,25 +100,6 @@ namespace bleak.Sql.VersionManager
 
                 // Create the Primary Key  
                 pk.Create();
-            }
-            
-        }
-
-        public Database GetDatabase()
-        {
-            if (Server.Databases.Contains(DatabaseName))
-            {
-                return Server.Databases[DatabaseName];
-            }
-            return null;
-        }
-
-        public void DropDatabase()
-        {
-            var database = GetDatabase();
-            if (database != null)
-            {
-                database.Drop();
             }
         }
 
@@ -162,54 +127,61 @@ namespace bleak.Sql.VersionManager
                 Console.WriteLine(excpt.Message);
             }
         }
-    }
-    public class Minifier
-    {
-        public SqlMinifier SqlMinifier { get; set; }
 
-        private Minifier()
+        private void ExecuteSql(string sql)
         {
-            SqlMinifier = new SqlMinifier();
+            var database = new Database(Server, DatabaseName);
+            database.ExecuteNonQuery(sql);
         }
-        private static object syncroot = new object();
-        private static Minifier _instance;
-        public static Minifier Instance
+
+        #endregion Internal Methods
+
+        #region Database Management
+
+        public Database CreateDatabase()
         {
-            get
+            var database = new Database(Server, DatabaseName);
+            database.Create();
+            IntializeDatabase();
+            return GetDatabase();
+        }
+
+        public void DropDatabase()
+        {
+            var database = GetDatabase();
+            if (database != null)
             {
-                if (_instance == null)
-                {
-                    lock (syncroot)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new Minifier();
-                        }
-                    }
-                }
-                return _instance;
+                database.Drop();
             }
         }
-    }
-    public static class StringExtensionMethods
-    {
-        public static string Minify(this string input)
+
+        public Database GetDatabase()
         {
-            return Minifier.Instance.SqlMinifier.Minify(input);
-        }
-    }
-    public class Script
-    {
-        public int Index { get; set; }
-        public string FileName { get; set; }
-        public string LoadFullText(bool minify = true)
-        {
-            string data = File.ReadAllText(FileName);
-            if (minify)
+            if (Server.Databases.Contains(DatabaseName))
             {
-                return data.Minify();
+                return Server.Databases[DatabaseName];
             }
-            return data;
+            return null;
         }
+
+        #endregion Database Management
+
+        #region Version Management
+
+        public void UpdateDatabase()
+        {
+            foreach (var script in Scripts.OrderBy(s => s.FileName))
+            {
+                var sql = script.LoadFullText();
+                ExecuteSql(sql);
+                VersionLog log = new VersionLog();
+                log.Script = script.FileName;
+                log.DeployDate = DateTimeOffset.Now;
+                context.VersionLogs.Add(log);
+            }
+            context.SaveChanges();
+        }
+
+        #endregion Version Management
     }
 }
