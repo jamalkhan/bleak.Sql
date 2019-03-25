@@ -11,6 +11,7 @@ namespace bleak.Sql.VersionManager
     {
         [Key]
         public string Script { get; set; }
+        public string FileName { get; set; }
         public DateTimeOffset DeployDate { get; set; }
     }
 }

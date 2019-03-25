@@ -5,14 +5,10 @@ namespace bleak.Sql.VersionManager.Tests
 {
 
     [TestClass]
-    public class ScriptDetectionTests
+    public class ScriptDetectionTests : TestBaseClass
     {
-        private SqlServerVersionManager manager = new SqlServerVersionManager(
-            folder: Directory.GetCurrentDirectory(),
-            server: Configuration.Settings.Master.Server,
-            username: Configuration.Settings.Master.Username,
-            password: Configuration.Settings.Master.Password,
-            databaseName: null);
+        public ScriptDetectionTests() : base("script_detection") { }
+
         [TestMethod]
         public void TestScriptDetectionCount()
         {

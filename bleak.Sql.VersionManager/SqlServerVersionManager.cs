@@ -16,14 +16,14 @@ namespace bleak.Sql.VersionManager
         private bleakSqlContext context;
         public const string _VersionSchema = "version";
         public const string _VersionTable = "log";
-        public string Folder { get; private set; }
+        public string Folder { get; protected set; }
         public string ServerInstance { get; private set; }
         public string DatabaseName { get; private set; }
         public string Username { get; private set; }
         public string Password { get; private set; }
         public ServerConnection Connection { get; private set; }
         public Server Server { get; private set; }
-        public IList<Script> Scripts { get; set; } = new List<Script>();
+        public IList<DdlScript> Scripts { get; set; } = new List<DdlScript>();
         #endregion Properties
 
         #region Constructor
@@ -52,14 +52,17 @@ namespace bleak.Sql.VersionManager
             }
             DirSearch(Folder);
 
-            var sqlConnectionStringBuilder = new SqlConnectionStringBuilder();
-            sqlConnectionStringBuilder.UserID = username;
-            sqlConnectionStringBuilder.Password = password;
-            sqlConnectionStringBuilder["Server"] = server;
-            sqlConnectionStringBuilder.InitialCatalog = databaseName;
-            var builder = new DbContextOptionsBuilder<bleakSqlContext>();
-            builder.UseSqlServer(sqlConnectionStringBuilder.ConnectionString);
-            context = new bleakSqlContext(builder.Options);
+            if (!string.IsNullOrEmpty(databaseName))
+            {
+                var sqlConnectionStringBuilder = new SqlConnectionStringBuilder();
+                sqlConnectionStringBuilder.UserID = username;
+                sqlConnectionStringBuilder.Password = password;
+                sqlConnectionStringBuilder["Server"] = server;
+                sqlConnectionStringBuilder.InitialCatalog = databaseName;
+                var builder = new DbContextOptionsBuilder<bleakSqlContext>();
+                builder.UseSqlServer(sqlConnectionStringBuilder.ConnectionString);
+                context = new bleakSqlContext(builder.Options);
+            }
         }
         #endregion Constructor
 
@@ -79,10 +82,16 @@ namespace bleak.Sql.VersionManager
                 var table = new Table(database, "Log", "version");
 
                 var scriptColumnName = "Script";
+                var fileNameColumnName = "FileName";
                 var deployDateColumnName = "DeployDate";
+
                 var scriptColumn = new Column(table, scriptColumnName, DataType.NVarChar(2000));
                 scriptColumn.Nullable = false;
                 table.Columns.Add(scriptColumn);
+
+                var fileNameColumn = new Column(table, fileNameColumnName, DataType.NVarCharMax);
+                fileNameColumn.Nullable = false;
+                table.Columns.Add(fileNameColumn);
 
                 var deployDateColumn = new Column(table, deployDateColumnName, DataType.DateTimeOffset(7));
                 deployDateColumn.Nullable = false;
@@ -107,24 +116,24 @@ namespace bleak.Sql.VersionManager
         {
             try
             {
-                foreach (string d in Directory.GetDirectories(sDir))
+                foreach (string filename in Directory.GetFiles(sDir)
+                    .Where(fn =>
+                        Path.GetExtension(fn).ToLower() == ".sql"
+                        )
+                    .OrderBy(s => s))
                 {
-                    foreach (string f in Directory.GetFiles(d).OrderBy(s => s))
+                    var extension = Path.GetExtension(filename);
+                    if (!Scripts.Any(s => s.FileName == filename))
                     {
-                        if (f.EndsWith(".sql"))
-                        {
-                            var script = new Script();
-                            script.FileName = f;
-                            Scripts.Add(script);
-                        }
-                        Console.WriteLine(f);
+                        var script = new DdlScript();
+                        script.Script = Path.GetFileName(filename);
+                        script.FileName = filename;
+                        Scripts.Add(script);
                     }
-                    DirSearch(d);
                 }
             }
-            catch (System.Exception excpt)
+            catch (Exception)
             {
-                Console.WriteLine(excpt.Message);
             }
         }
 
@@ -170,16 +179,26 @@ namespace bleak.Sql.VersionManager
 
         public void UpdateDatabase()
         {
-            foreach (var script in Scripts.OrderBy(s => s.FileName))
+            DirSearch(Folder);
+            foreach (var script in Scripts.OrderBy(s => s.Script))
             {
-                var sql = script.LoadFullText();
-                ExecuteSql(sql);
-                VersionLog log = new VersionLog();
-                log.Script = script.FileName;
-                log.DeployDate = DateTimeOffset.Now;
-                context.VersionLogs.Add(log);
+                if (context.VersionLogs.Count(vl => vl.Script == script.Script) == 0)
+                {
+                    var sql = script.LoadFullText();
+                    ExecuteSql(sql);
+                    VersionLog log = new VersionLog();
+                    log.Script = script.Script;
+                    log.FileName = script.FileName;
+                    log.DeployDate = DateTimeOffset.Now;
+                    context.VersionLogs.Add(log);
+                }
             }
             context.SaveChanges();
+        }
+
+        public IList<VersionLog> GetDeployedChangesets()
+        {
+            return context.VersionLogs.ToList();
         }
 
         #endregion Version Management

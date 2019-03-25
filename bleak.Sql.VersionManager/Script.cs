@@ -2,9 +2,10 @@
 
 namespace bleak.Sql.VersionManager
 {
-    public class Script
+    public class DdlScript
     {
         public int Index { get; set; }
+        public string Script { get; set; }
         public string FileName { get; set; }
         public string LoadFullText(bool minify = true)
         {
