@@ -11,20 +11,18 @@ using DataType = Microsoft.SqlServer.Management.Smo.DataType;
 
 namespace bleak.Sql.VersionManager
 {
-    public class SqlServerVersionManager : IDatabaseVersionManager
+    public class SqlServerVersionManager : BaseDatabaseVersionManager, IDatabaseVersionManager
     {
         #region Properties
         private VersionManagerDbContext context;
         public const string _VersionSchema = "version";
         public const string _VersionTable = "log";
-        public string Folder { get; protected set; }
         public string ServerInstance { get; private set; }
         public string DatabaseName { get; private set; }
         public string Username { get; private set; }
         public string Password { get; private set; }
         public ServerConnection Connection { get; private set; }
         public Server Server { get; private set; }
-        public IList<DdlScript> Scripts { get; set; } = new List<DdlScript>();
         #endregion Properties
 
         #region Constructor
@@ -51,7 +49,7 @@ namespace bleak.Sql.VersionManager
             {
                 CreateDatabase();
             }
-            DirSearch(Folder);
+            LoadScripts(Folder);
 
             if (!string.IsNullOrEmpty(databaseName))
             {
@@ -80,7 +78,7 @@ namespace bleak.Sql.VersionManager
 
         #region Internal Methods
 
-        private void IntializeDatabase()
+        public void IntializeDatabase()
         {
             var database = (SqlServerDatabase)GetDatabase();
             if (!database.Schemas.Any(s => s.Name == _VersionSchema))
@@ -124,30 +122,7 @@ namespace bleak.Sql.VersionManager
             }
         }
 
-        private void DirSearch(string sDir)
-        {
-            try
-            {
-                foreach (string filename in Directory.GetFiles(sDir)
-                    .Where(fn =>
-                        Path.GetExtension(fn).ToLower() == ".sql"
-                        )
-                    .OrderBy(s => s))
-                {
-                    var extension = Path.GetExtension(filename);
-                    if (!Scripts.Any(s => s.FileName == filename))
-                    {
-                        var script = new DdlScript();
-                        script.Script = Path.GetFileName(filename);
-                        script.FileName = filename;
-                        Scripts.Add(script);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
+        
 
         private void ExecuteSql(string sql)
         {
@@ -197,7 +172,7 @@ namespace bleak.Sql.VersionManager
 
         public void UpdateDatabase()
         {
-            DirSearch(Folder);
+            LoadScripts(Folder);
             foreach (var script in Scripts.OrderBy(s => s.Script))
             {
                 if (context.VersionLogs.Count(vl => vl.Script == script.Script) == 0)

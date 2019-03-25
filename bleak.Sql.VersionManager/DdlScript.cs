@@ -2,6 +2,7 @@
 
 namespace bleak.Sql.VersionManager
 {
+
     public class DdlScript
     {
         public int Index { get; set; }
