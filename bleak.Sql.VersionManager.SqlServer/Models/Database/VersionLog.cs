@@ -3,9 +3,8 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace bleak.Sql.VersionManager
+namespace bleak.Sql.VersionManager.SqlServer.Models.Database
 {
-
     [Table("Log", Schema = "version")]
     public class VersionLog : IVersionLog
     {

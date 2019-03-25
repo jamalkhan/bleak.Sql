@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace bleak.Sql.VersionManager.SqlServer.Models
+namespace bleak.Sql.VersionManager.Models
 {
     public class SqlServerTable : ITable
     {

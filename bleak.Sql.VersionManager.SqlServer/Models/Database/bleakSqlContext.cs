@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace bleak.Sql.VersionManager
+namespace bleak.Sql.VersionManager.SqlServer.Models.Database
 {
     public class VersionManagerDbContext : DbContext
     {

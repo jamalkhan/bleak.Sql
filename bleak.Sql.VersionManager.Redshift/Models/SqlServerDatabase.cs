@@ -1,9 +1,8 @@
 ﻿using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
-using SmoDatabase = Microsoft.SqlServer.Management.Smo.Database;
 
-namespace bleak.Sql.VersionManager.SqlServer.Models
+namespace bleak.Sql.VersionManager.Models
 {
     public class SqlServerDatabase : IDatabase
     {
@@ -11,7 +10,7 @@ namespace bleak.Sql.VersionManager.SqlServer.Models
         public IList<ISchema> Schemas { get; set; }
         public IList<ITable> Tables { get; set; }
         public DateTime CreateDate { get; set; }
-        internal SmoDatabase SmoDatabase { get; set; }
+        internal Database SmoDatabase { get; set; }
         internal Server SmoServer { get; set; }
         public void Drop()
         {

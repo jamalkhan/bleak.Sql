@@ -1,12 +1,11 @@
 ﻿using Microsoft.SqlServer.Management.Smo;
 using System.Collections.Generic;
-using SmoDatabase = Microsoft.SqlServer.Management.Smo.Database;
 
-namespace bleak.Sql.VersionManager.SqlServer.Models
+namespace bleak.Sql.VersionManager.Models
 {
     public static class SqlServerDatabaseExtensionMethods
     {
-        public static IDatabase ConvertToIDatabase(this SmoDatabase database, Server server)
+        public static IDatabase ConvertToIDatabase(this Database database, Server server)
         {
             var retval = new SqlServerDatabase();
             retval.Name = database.Name;

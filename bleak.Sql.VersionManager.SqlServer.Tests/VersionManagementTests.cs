@@ -1,4 +1,4 @@
-﻿using bleak.Sql.VersionManager.Models;
+﻿using bleak.Sql.VersionManager.SqlServer.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using System.Linq;

@@ -4,7 +4,7 @@
     public interface IDatabase
     {
         string Name { get; set; }
-        void Drop(bool backup = true);
+        void Drop();
         //string ServerAddress { get; set; }
 
         //IEnumerable<ITable> Tables { get; set; }

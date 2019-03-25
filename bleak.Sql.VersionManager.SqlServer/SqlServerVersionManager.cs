@@ -1,4 +1,5 @@
-﻿using bleak.Sql.VersionManager.Models;
+﻿using bleak.Sql.VersionManager.SqlServer.Models;
+using bleak.Sql.VersionManager.SqlServer.Models.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
@@ -9,7 +10,7 @@ using System.IO;
 using System.Linq;
 using DataType = Microsoft.SqlServer.Management.Smo.DataType;
 
-namespace bleak.Sql.VersionManager
+namespace bleak.Sql.VersionManager.SqlServer
 {
     public class SqlServerVersionManager : BaseDatabaseVersionManager, IDatabaseVersionManager
     {
@@ -170,7 +171,7 @@ namespace bleak.Sql.VersionManager
 
         #region Version Management
 
-        public void UpdateDatabase(bool backup = true)
+        public void UpdateDatabase()
         { 
             LoadScripts(Folder);
             foreach (var script in Scripts.OrderBy(s => s.Script))

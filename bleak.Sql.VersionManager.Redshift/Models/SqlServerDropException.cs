@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace bleak.Sql.VersionManager.SqlServer.Models
+namespace bleak.Sql.VersionManager.Redshift.Models
 {
     public class SqlServerDropException : Exception
     {
