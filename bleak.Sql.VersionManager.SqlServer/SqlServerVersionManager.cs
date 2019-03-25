@@ -142,7 +142,7 @@ namespace bleak.Sql.VersionManager
             return GetDatabase();
         }
 
-        public void DropDatabase(bool backup = true)
+        public void DropDatabase()
         {
             var database = (SqlServerDatabase)GetDatabase();
             if (database != null)
@@ -151,7 +151,7 @@ namespace bleak.Sql.VersionManager
                 {
                     context.Dispose();
                 }
-                database.Drop(backup);
+                database.Drop();
             }
         }
 
@@ -170,8 +170,8 @@ namespace bleak.Sql.VersionManager
 
         #region Version Management
 
-        public void UpdateDatabase()
-        {
+        public void UpdateDatabase(bool backup = true)
+        { 
             LoadScripts(Folder);
             foreach (var script in Scripts.OrderBy(s => s.Script))
             {

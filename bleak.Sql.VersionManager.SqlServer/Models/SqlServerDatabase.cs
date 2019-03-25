@@ -12,14 +12,10 @@ namespace bleak.Sql.VersionManager.Models
         public DateTime CreateDate { get; set; }
         internal Database SmoDatabase { get; set; }
         internal Server SmoServer { get; set; }
-        public void Drop(bool backup = true)
+        public void Drop()
         {
             try
             {
-                if (backup)
-                {
-                    Backup();
-                }
                 SmoServer.KillAllProcesses(Name);
                 SmoDatabase.Drop();
             }

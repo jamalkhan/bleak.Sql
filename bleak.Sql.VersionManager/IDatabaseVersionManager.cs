@@ -8,7 +8,7 @@ namespace bleak.Sql.VersionManager
         void IntializeDatabase();
         IDatabase CreateDatabase();
         void UpdateDatabase();
-        void DropDatabase(bool backup = true);
+        void DropDatabase();
         IDatabase GetDatabase();
         IList<IVersionLog> GetDeployedChangesets();
     }
