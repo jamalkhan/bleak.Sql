@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\bleak.Sql.Minifier\bleak.Sql.Minifier.csproj" />
-    <ProjectReference Include="..\bleak.Sql.VersionManager\bleak.Sql.VersionManager.csproj" />
+    <ProjectReference Include="..\bleak.Sql.VersionManager.SqlServer\bleak.Sql.VersionManager.SqlServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

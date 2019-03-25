@@ -7,7 +7,7 @@ namespace bleak.Sql.VersionManager
 {
 
     [Table("Log", Schema = "version")]
-    public class VersionLog
+    public class VersionLog : IVersionLog
     {
         [Key]
         public string Script { get; set; }

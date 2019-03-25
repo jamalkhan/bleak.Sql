@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using bleak.Sql.VersionManager.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using System;
@@ -10,10 +11,10 @@ using DataType = Microsoft.SqlServer.Management.Smo.DataType;
 
 namespace bleak.Sql.VersionManager
 {
-    public class SqlServerVersionManager
+    public class SqlServerVersionManager : IDatabaseVersionManager
     {
         #region Properties
-        private bleakSqlContext context;
+        private VersionManagerDbContext context;
         public const string _VersionSchema = "version";
         public const string _VersionTable = "log";
         public string Folder { get; protected set; }
@@ -59,27 +60,38 @@ namespace bleak.Sql.VersionManager
                 sqlConnectionStringBuilder.Password = password;
                 sqlConnectionStringBuilder["Server"] = server;
                 sqlConnectionStringBuilder.InitialCatalog = databaseName;
-                var builder = new DbContextOptionsBuilder<bleakSqlContext>();
+                var builder = new DbContextOptionsBuilder<VersionManagerDbContext>();
                 builder.UseSqlServer(sqlConnectionStringBuilder.ConnectionString);
-                context = new bleakSqlContext(builder.Options);
+                context = new VersionManagerDbContext(builder.Options);
             }
         }
         #endregion Constructor
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            if (context != null)
+            {
+                context.Dispose();
+            }
+        }
+        #endregion IDisposable
 
         #region Internal Methods
 
         private void IntializeDatabase()
         {
-            var database = GetDatabase();
-            if (!database.Schemas.Contains(_VersionSchema))
+            var database = (SqlServerDatabase)GetDatabase();
+            if (!database.Schemas.Any(s => s.Name == _VersionSchema))
             {
-                var schema = new Schema(database, "version");
+                var schema = new Schema(database.SmoDatabase, "version");
                 schema.Create();
             }
 
-            if (!database.Tables.Contains(_VersionTable, _VersionSchema))
+            if (!database.Tables.Any(t => t.Name == _VersionTable && ((SqlServerTable)t).Schema == _VersionSchema))
             {
-                var table = new Table(database, "Log", "version");
+                var table = new Table(database.SmoDatabase, "Log", "version");
 
                 var scriptColumnName = "Script";
                 var fileNameColumnName = "FileName";
@@ -147,7 +159,7 @@ namespace bleak.Sql.VersionManager
 
         #region Database Management
 
-        public Database CreateDatabase()
+        public IDatabase CreateDatabase()
         {
             var database = new Database(Server, DatabaseName);
             database.Create();
@@ -155,23 +167,29 @@ namespace bleak.Sql.VersionManager
             return GetDatabase();
         }
 
-        public void DropDatabase()
+        public void DropDatabase(bool backup = true)
         {
-            var database = GetDatabase();
+            var database = (SqlServerDatabase)GetDatabase();
             if (database != null)
             {
-                database.Drop();
+                if (context != null)
+                {
+                    context.Dispose();
+                }
+                database.Drop(backup);
             }
         }
 
-        public Database GetDatabase()
+        public IDatabase GetDatabase()
         {
             if (Server.Databases.Contains(DatabaseName))
             {
-                return Server.Databases[DatabaseName];
+                var smoDatabase = Server.Databases[DatabaseName];
+                return smoDatabase.ConvertToIDatabase(server: Server);
             }
             return null;
         }
+
 
         #endregion Database Management
 
@@ -196,9 +214,15 @@ namespace bleak.Sql.VersionManager
             context.SaveChanges();
         }
 
-        public IList<VersionLog> GetDeployedChangesets()
+        public IList<IVersionLog> GetDeployedChangesets()
         {
-            return context.VersionLogs.ToList();
+            var versionLogs = context.VersionLogs;
+            var retval = new List<IVersionLog>();
+            foreach (var versionLog in versionLogs)
+            {
+                retval.Add(versionLog);
+            }
+            return retval;
         }
 
         #endregion Version Management

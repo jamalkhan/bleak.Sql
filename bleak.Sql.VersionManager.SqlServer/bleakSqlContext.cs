@@ -2,12 +2,11 @@
 
 namespace bleak.Sql.VersionManager
 {
-
-    public class bleakSqlContext : DbContext
+    public class VersionManagerDbContext : DbContext
     {
         #region Constructor
-        public bleakSqlContext() : base() { }
-        public bleakSqlContext(DbContextOptions<bleakSqlContext> options) : base(options) { }
+        public VersionManagerDbContext() : base() { }
+        public VersionManagerDbContext(DbContextOptions<VersionManagerDbContext> options) : base(options) { }
         #endregion Constructor
 
         #region Properties
