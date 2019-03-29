@@ -5,8 +5,6 @@ using System.IO;
 
 namespace bleak.Sql.VersionManager.Tests
 {
-
-
     public abstract class TestBaseClass
     {
         protected string DatabaseName;

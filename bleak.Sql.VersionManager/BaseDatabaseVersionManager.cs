@@ -8,7 +8,7 @@ namespace bleak.Sql.VersionManager
 
     public class BaseDatabaseVersionManager
     {
-        public IList<DdlScript> Scripts { get; set; } = new List<DdlScript>();
+        public IList<ChangeScript> Scripts { get; set; } = new List<ChangeScript>();
         public string Folder { get; protected set; }
         public virtual string ScriptExtension { get; set; } = ".sql";
         public void LoadScripts(string sDir)
@@ -24,7 +24,7 @@ namespace bleak.Sql.VersionManager
                     var extension = Path.GetExtension(filename);
                     if (!Scripts.Any(s => s.FileName == filename))
                     {
-                        var script = new DdlScript();
+                        var script = new ChangeScript();
                         script.Script = Path.GetFileName(filename);
                         script.FileName = filename;
                         Scripts.Add(script);

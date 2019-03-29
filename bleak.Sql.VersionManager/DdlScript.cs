@@ -3,7 +3,7 @@
 namespace bleak.Sql.VersionManager
 {
 
-    public class DdlScript
+    public class ChangeScript
     {
         public int Index { get; set; }
         public string Script { get; set; }
