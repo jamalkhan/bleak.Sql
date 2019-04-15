@@ -8,7 +8,7 @@ pool:
 variables:
   buildConfiguration: 'Release'
   Major: '0'
-  Minor: '9'
+  Minor: '10'
   Patch: '0'
 
 
@@ -16,22 +16,36 @@ steps:
 - script: |
     dotnet restore bleak.Sql.Minifier/bleak.Sql.Minifier.csproj
     dotnet restore bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj
+	dotnet restore bleak.Sql.VersionManager/bleak.Sql.VersionManager.csproj
+    dotnet restore bleak.Sql.VersionManager.Redshift\bleak.Sql.VersionManager.Redshift.csproj
+	dotnet restore bleak.Sql.VersionManager.Redshift.Tests\bleak.Sql.VersionManager.Redshift.Tests.csproj
+    dotnet restore bleak.Sql.VersionManager.SqlServer\bleak.Sql.VersionManager.SqlServer.csproj
+	dotnet restore bleak.Sql.VersionManager.SqlServer.Tests\bleak.Sql.VersionManager.SqlServer.Tests.csproj
   displayName: Restore
   name: Restore
 
 - script: |
     dotnet build bleak.Sql.Minifier/bleak.Sql.Minifier.csproj --configuration $(buildConfiguration)
     dotnet build bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj --configuration $(buildConfiguration)
+	dotnet build bleak.Sql.VersionManager/bleak.Sql.VersionManager.csproj
+    dotnet build bleak.Sql.VersionManager.Redshift\bleak.Sql.VersionManager.Redshift.csproj
+	dotnet build bleak.Sql.VersionManager.SqlServer\bleak.Sql.VersionManager.SqlServer.csproj
   displayName: Build
   name: Build
 
+  
 - script: |
     dotnet test bleak.Sql.Minifier.Tests --configuration $(buildConfiguration) --logger trx
   displayName: Tests
   name: Tests
+# Not currently running the tests for SqlServer and Redshift VersionManagers... since these tests require connection to a database.
+# Shame on Jamal for making an integration test and not a unit test.
 
 - script: |
     dotnet pack bleak.Sql.Minifier/bleak.Sql.Minifier.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
+	dotnet pack bleak.Sql.VersionManager/bleak.Sql.VersionManager.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
+    dotnet pack bleak.Sql.VersionManager.Redshift\bleak.Sql.VersionManager.Redshift.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
+	dotnet pack bleak.Sql.VersionManager.SqlServer\bleak.Sql.VersionManager.SqlServer.csproj -c $(buildConfiguration) /p:PackageVersion=$(major).$(minor).$(patch) --output $(Build.ArtifactStagingDirectory) --no-build --no-restore
   displayName: Pack
   name: Pack
 

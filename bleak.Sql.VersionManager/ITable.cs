@@ -7,9 +7,4 @@ namespace bleak.Sql.VersionManager
         string Name { get; set; }
         IList<IColumn> Columns { get; set; }
     }
-
-    public interface IColumn
-    {
-        string Name { get; set; }
-    }
 }
