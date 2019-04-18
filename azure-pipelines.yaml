@@ -27,9 +27,9 @@ steps:
 - script: |
     dotnet build bleak.Sql.Minifier/bleak.Sql.Minifier.csproj --configuration $(buildConfiguration)
     dotnet build bleak.Sql.Minifier.Tests/bleak.Sql.Minifier.Tests.csproj --configuration $(buildConfiguration)
-    dotnet build bleak.Sql.VersionManager/bleak.Sql.VersionManager.csproj
-    dotnet build bleak.Sql.VersionManager.Redshift/bleak.Sql.VersionManager.Redshift.csproj
-    dotnet build bleak.Sql.VersionManager.SqlServer/bleak.Sql.VersionManager.SqlServer.csproj
+    dotnet build bleak.Sql.VersionManager/bleak.Sql.VersionManager.csproj --configuration $(buildConfiguration)
+    dotnet build bleak.Sql.VersionManager.Redshift/bleak.Sql.VersionManager.Redshift.csproj --configuration $(buildConfiguration)
+    dotnet build bleak.Sql.VersionManager.SqlServer/bleak.Sql.VersionManager.SqlServer.csproj --configuration $(buildConfiguration)
   displayName: Build
   name: Build
 
