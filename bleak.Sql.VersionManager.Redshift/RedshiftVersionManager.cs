@@ -11,7 +11,7 @@ namespace bleak.Sql.VersionManager.Redshift
         #region Constants
         private const string _VersionSchema = "version";
         private const string _VersionTable = "log";
-        private const string _ScriptCreateVersionLogTable = "create table if not exists version.log(script nvarchar(1000) not null,filename nvarchar(1000) not null,deploydate timestamp not null,primary key(script))distkey(deploydate)compound sortkey(script, deploydate);";
+        private const string _ScriptCreateVersionLogTable = "create table if not exists version.log(script nvarchar(1000) not null,filename nvarchar(1000) not null,deploydate TIMESTAMPTZ not null,primary key(script))distkey(deploydate)compound sortkey(script, deploydate);";
         private const string _ScriptCreateVersionSchema = "create schema if not exists version;";
         #endregion Constants
 

@@ -2,7 +2,6 @@
 
 namespace bleak.Sql.VersionManager
 {
-
     public class ChangeScript
     {
         public int Index { get; set; }
@@ -13,6 +12,7 @@ namespace bleak.Sql.VersionManager
             string data = File.ReadAllText(FileName);
             if (minify)
             {
+
                 return data.Minify();
             }
             return data;

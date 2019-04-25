@@ -1,12 +1,12 @@
 ﻿using bleak.Sql.VersionManager.SqlServer.Models;
 using bleak.Sql.VersionManager.SqlServer.Models.Database;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.IO;
 using System.Linq;
 using DataType = Microsoft.SqlServer.Management.Smo.DataType;
 
@@ -24,6 +24,7 @@ namespace bleak.Sql.VersionManager.SqlServer
         public string Password { get; private set; }
         public ServerConnection Connection { get; private set; }
         public Server Server { get; private set; }
+        public ILogger Logger { get; private set; }
         #endregion Properties
 
         #region Constructor
@@ -33,7 +34,8 @@ namespace bleak.Sql.VersionManager.SqlServer
             string username,
             string password,
             string databaseName,
-            bool createDatabase = false
+            bool createDatabase = false,
+            ILogger logger = null
             )
         {
             Folder = folder;
@@ -43,6 +45,7 @@ namespace bleak.Sql.VersionManager.SqlServer
             DatabaseName = databaseName;
             Connection = new ServerConnection(serverInstance: ServerInstance, userName: Username, password: Password);
             Server = new Server(Connection);
+            Logger = logger;
             if (
                 createDatabase
                 && !string.IsNullOrEmpty(databaseName)
@@ -50,6 +53,7 @@ namespace bleak.Sql.VersionManager.SqlServer
             {
                 CreateDatabase();
             }
+            IntializeDatabase();
             LoadScripts(Folder);
 
             if (!string.IsNullOrEmpty(databaseName))
@@ -81,16 +85,32 @@ namespace bleak.Sql.VersionManager.SqlServer
 
         public void IntializeDatabase()
         {
+            if (Logger != null)
+            {
+                Logger.Log(LogLevel.Information, $"Initializing Database {DatabaseName}");
+            }
             var database = (SqlServerDatabase)GetDatabase();
             if (!database.Schemas.Any(s => s.Name == _VersionSchema))
             {
                 var schema = new Schema(database.SmoDatabase, "version");
+                if (Logger != null)
+                {
+                    Logger.Log(LogLevel.Information, $"Creating version Schema in {DatabaseName}");
+                }
                 schema.Create();
+                if (Logger != null)
+                {
+                    Logger.Log(LogLevel.Debug, $"Created version Schema in {DatabaseName}");
+                }
             }
 
             if (!database.Tables.Any(t => t.Name == _VersionTable && ((SqlServerTable)t).Schema == _VersionSchema))
             {
                 var table = new Table(database.SmoDatabase, "Log", "version");
+                if (Logger != null)
+                {
+                    Logger.Log(LogLevel.Information, $"Creating version.Log Table in {DatabaseName}");
+                }
 
                 var scriptColumnName = "Script";
                 var fileNameColumnName = "FileName";
@@ -109,8 +129,16 @@ namespace bleak.Sql.VersionManager.SqlServer
                 table.Columns.Add(deployDateColumn);
 
                 table.Create();
+                if (Logger != null)
+                {
+                    Logger.Log(LogLevel.Debug, $"Created version.Log Table in {DatabaseName}");
+                }
 
                 // Define Index object on the table by supplying the Table1 as the parent table and the primary key name in the constructor.  
+                if (Logger != null)
+                {
+                    Logger.Log(LogLevel.Information, $"Creating {table.Schema}_{table.Name}_PK Primary Key in {DatabaseName}");
+                }
                 Index pk = new Index(table, $"{table.Schema}_{table.Name}_PK");
                 pk.IndexKeyType = IndexKeyType.DriPrimaryKey;
 
@@ -120,15 +148,33 @@ namespace bleak.Sql.VersionManager.SqlServer
 
                 // Create the Primary Key  
                 pk.Create();
+                if (Logger != null)
+                {
+                    Logger.Log(LogLevel.Debug, $"Created {table.Schema}_{table.Name}_PK Primary Key in {DatabaseName}");
+                }
+            }
+            if (Logger != null)
+            {
+                Logger.Log(LogLevel.Information, $"Database {DatabaseName} has been initialized.");
             }
         }
 
-        
+
 
         private void ExecuteSql(string sql)
         {
+            if (Logger != null)
+            {
+                Logger.Log(LogLevel.Information, $"Executing Script against {DatabaseName}.");
+                Logger.Log(LogLevel.Debug, $"{sql}");
+            }
+            // TODO: why am I defining a database everytime?!
             var database = new Database(Server, DatabaseName);
             database.ExecuteNonQuery(sql);
+            if (Logger != null)
+            {
+                Logger.Log(LogLevel.Information, $"Executed Script against {DatabaseName}.");
+            }
         }
 
         #endregion Internal Methods
@@ -137,9 +183,10 @@ namespace bleak.Sql.VersionManager.SqlServer
 
         public IDatabase CreateDatabase()
         {
+            // TODO: What happens if the database already exists?!
+
             var database = new Database(Server, DatabaseName);
             database.Create();
-            IntializeDatabase();
             return GetDatabase();
         }
 
@@ -172,7 +219,7 @@ namespace bleak.Sql.VersionManager.SqlServer
         #region Version Management
 
         public void UpdateDatabase()
-        { 
+        {
             LoadScripts(Folder);
             foreach (var script in Scripts.OrderBy(s => s.Script))
             {
