@@ -8,16 +8,16 @@ pool:
 variables:
   buildConfiguration: 'Release'
   MinifierMajor: '0'
-  MinifierMinor: '12'
+  MinifierMinor: '14'
   MinifierPatch: '0'
   VersionManagerMajor: '0'
-  VersionManagerMinor: '12'
+  VersionManagerMinor: '14'
   VersionManagerPatch: '0'
   RedshiftMajor: '0'
-  RedshiftMinor: '13'
+  RedshiftMinor: '14'
   RedshiftPatch: '0'
   SqlServerMajor: '0'
-  SqlServerMinor: '12'
+  SqlServerMinor: '14'
   SqlServerPatch: '0'
 
 
