@@ -3,7 +3,12 @@ using Npgsql;
 
 namespace bleak.Sql.VersionManager.Redshift.Models.Database
 {
-
+    public enum SslMode
+    {
+        Require,
+        Prefer,
+        Disable,
+    }
     public class VersionManagerDbContext : DbContext
     {
         #region ConnectionString
@@ -23,6 +28,22 @@ namespace bleak.Sql.VersionManager.Redshift.Models.Database
                         builder.Database = DatabaseName;
                         builder.Username = Username;
                         builder.Password = Password;
+                        builder.ServerCompatibilityMode = CompatibilityMode;
+                        if (SslMode.HasValue)
+                        {
+                            switch (SslMode.Value)
+                            {
+                                case Models.Database.SslMode.Prefer:
+                                    builder.SslMode = Npgsql.SslMode.Prefer;
+                                    break;
+                                case Models.Database.SslMode.Disable:
+                                    builder.SslMode = Npgsql.SslMode.Disable;
+                                    break;
+                                case Models.Database.SslMode.Require:
+                                    builder.SslMode = Npgsql.SslMode.Require;
+                                    break;
+                            }
+                        }
                         _connectionString = builder.ConnectionString;
                     }
                 }
@@ -34,6 +55,8 @@ namespace bleak.Sql.VersionManager.Redshift.Models.Database
         public int Port { get; private set; }
         public string Username { get; private set; }
         public string Password { get; private set; }
+        public SslMode? SslMode { get; private set; }
+        public ServerCompatibilityMode CompatibilityMode { get; private set; }
         #endregion ConnectionString
 
         #region Entity Framework
@@ -47,13 +70,17 @@ namespace bleak.Sql.VersionManager.Redshift.Models.Database
         #endregion Entity Framework
 
         #region Constructor
-        public VersionManagerDbContext(string host, int port, string database, string username, string password) : base()
+        public VersionManagerDbContext(string host, int port, string database, string username, string password, SslMode? sslMode = null) : base()
         {
             Host = host;
             Port = port;
             DatabaseName = database;
             Username = username;
             Password = password;
+            SslMode = sslMode;
+            // TODO: This can be made configurable if targeting Postgres?
+            // Requires testing.
+            CompatibilityMode = ServerCompatibilityMode.Redshift;
         }
         #endregion Constructor
 

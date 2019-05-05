@@ -14,7 +14,7 @@ variables:
   VersionManagerMinor: '12'
   VersionManagerPatch: '0'
   RedshiftMajor: '0'
-  RedshiftMinor: '12'
+  RedshiftMinor: '13'
   RedshiftPatch: '0'
   SqlServerMajor: '0'
   SqlServerMinor: '12'
