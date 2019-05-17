@@ -31,7 +31,9 @@ namespace bleak.Sql.VersionManager.Redshift
             int port,
             string database,
             string username,
-            string password)
+            string password,
+            SslMode sslMode = SslMode.Require
+            )
         {
             ScriptRepo = scriptRepo;
             Host = host;
@@ -39,7 +41,7 @@ namespace bleak.Sql.VersionManager.Redshift
             Database = database;
             Username = username;
             Password = password;
-            DbContext = new VersionManagerDbContext(Host, Port, Database, Username, Password);
+            DbContext = new VersionManagerDbContext(Host, Port, Database, Username, Password, sslMode: sslMode);
         }
 
         public IDatabase CreateDatabase()
@@ -83,7 +85,7 @@ namespace bleak.Sql.VersionManager.Redshift
         {
             ScriptRepo.Refresh();
             var versionLogs = DbContext.VersionLogs.ToList();
-            foreach (var script in ScriptRepo.Scripts.OrderBy(s=> s.Script))
+            foreach (var script in ScriptRepo.Scripts.OrderBy(s => s.Script))
             {
                 if (versionLogs.Count(vl => vl.Script == script.Script) == 0)
                 {
