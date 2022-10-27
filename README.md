@@ -6,7 +6,7 @@ https://www.nuget.org/packages/bleak.Sql.VersionManager/
 
 
 Usage
-
+```
   private static void UpgradeDatabase(string connectionString, string folder)
         {
             var decoder = new SqlConnectionStringBuilder(connectionString);
@@ -36,3 +36,4 @@ Usage
             versionManager.UpdateDatabase();
             Console.WriteLine($"Database {decoder.InitialCatalog} has been upgraded.");
         }
+```
