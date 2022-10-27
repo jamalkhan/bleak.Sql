@@ -1,6 +1,9 @@
 # bleak.Sql
 
-Currently deployed to https://www.nuget.org/packages/bleak.Sql.Minifier/
+Currently deployed:
+https://www.nuget.org/packages/bleak.Sql.Minifier/
+https://www.nuget.org/packages/bleak.Sql.VersionManager/
+
 
 Usage
 
